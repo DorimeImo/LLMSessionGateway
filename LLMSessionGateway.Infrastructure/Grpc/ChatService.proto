@@ -1,0 +1,35 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "LLMSessionGateway.Infrastructure.Grpc";
+import "google/protobuf/empty.proto";
+
+service ChatService {
+  rpc OpenSession(OpenSessionRequest) returns (google.protobuf.Empty);
+  rpc SendMessage(UserMessageRequest) returns (google.protobuf.Empty);
+  rpc StreamReply(StreamReplyRequest) returns (stream AssistantReplyToken);
+  rpc CloseSession(CloseSessionRequest) returns (google.protobuf.Empty);
+}
+
+// --- Messages ---
+
+message OpenSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+}
+
+message UserMessageRequest {
+  string session_id = 1;
+  string message = 2;
+}
+
+message StreamReplyRequest {
+  string session_id = 1;
+}
+
+message AssistantReplyToken {
+  string token = 1;
+}
+
+message CloseSessionRequest {
+  string session_id = 1;
+}
