@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.IntegrationTests.Helpers
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
 {
     public static class IntegrationTestHelpers
     {

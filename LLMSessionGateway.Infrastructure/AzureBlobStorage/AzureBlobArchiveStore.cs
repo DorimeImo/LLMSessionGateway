@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using LLMSessionGateway.Application.Contracts.KeyGeneration;
 using LLMSessionGateway.Application.Contracts.Logging;
 using LLMSessionGateway.Application.Contracts.Observability;
@@ -19,13 +20,9 @@ namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
         public AzureBlobArchiveStore(BlobServiceClient blobServiceClient, string containerName, IStructuredLogger logger, ITracingService tracingService)
         {
             _containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            _containerClient.CreateIfNotExists(PublicAccessType.None);
             _logger = logger;
             _tracingService = tracingService;
-        }
-
-        public async Task EnsureContainerExistsAsync(CancellationToken cancellationToken)
-        {
-            await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<Result<Unit>> PersistSessionAsync(ChatSession session, CancellationToken cancellationToken)

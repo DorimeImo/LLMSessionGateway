@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Tests.IntegrationTests.Helpers
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
 {
     public class ApiWebApplicationFactory : WebApplicationFactory<Program>
     {

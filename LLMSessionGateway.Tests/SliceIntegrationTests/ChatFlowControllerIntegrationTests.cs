@@ -7,7 +7,7 @@ using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
-using LLMSessionGateway.Tests.IntegrationTests.Helpers;
+using LLMSessionGateway.Tests.SliceIntegrationTests.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -17,13 +17,13 @@ using Moq;
 using System.Text;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.IntegrationTests
+namespace LLMSessionGateway.Tests.SliceIntegrationTests
 {
-    public class ChatControllerIntegrationTests : IClassFixture<ApiWebApplicationFactory>
+    public class ChatFlowControllerIntegrationTests : IClassFixture<ApiWebApplicationFactory>
     {
         private readonly ApiWebApplicationFactory _factory;
 
-        public ChatControllerIntegrationTests(ApiWebApplicationFactory factory)
+        public ChatFlowControllerIntegrationTests(ApiWebApplicationFactory factory)
         {
             _factory = factory;
         }

@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Tests.IntegrationTests.Helpers
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
 {
     public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {

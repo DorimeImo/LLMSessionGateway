@@ -4,7 +4,7 @@ using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
-using LLMSessionGateway.Tests.IntegrationTests.Helpers;
+using LLMSessionGateway.Tests.SliceIntegrationTests.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +14,7 @@ using StackExchange.Redis;
 using System.Text;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.IntegrationTests
+namespace LLMSessionGateway.Tests.SliceIntegrationTests
 {
     public class ChatFlowSessionManagerIntegrationTests : IClassFixture<ApiWebApplicationFactory>
     {
