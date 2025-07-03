@@ -1,0 +1,14 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+bin/
+obj/
+# Ignore build output
+bin/
+obj/
+.vs/
+*.user
+*.suo
