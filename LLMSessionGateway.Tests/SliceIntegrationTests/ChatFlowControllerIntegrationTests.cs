@@ -19,11 +19,11 @@ using Xunit;
 
 namespace LLMSessionGateway.Tests.SliceIntegrationTests
 {
-    public class ChatFlowControllerIntegrationTests : IClassFixture<ApiWebApplicationFactory>
+    public class ChatFlowControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
-        private readonly ApiWebApplicationFactory _factory;
+        private readonly WebApplicationFactory<Program> _factory;
 
-        public ChatFlowControllerIntegrationTests(ApiWebApplicationFactory factory)
+        public ChatFlowControllerIntegrationTests(WebApplicationFactory<Program> factory)
         {
             _factory = factory;
         }

@@ -1,4 +1,5 @@
-﻿using LLMSessionGateway.Application.Contracts.Logging;
+﻿using LLMSessionGateway.API;
+using LLMSessionGateway.Application.Contracts.Logging;
 using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
@@ -6,6 +7,7 @@ using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
 using LLMSessionGateway.Tests.SliceIntegrationTests.Helpers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -16,11 +18,11 @@ using Xunit;
 
 namespace LLMSessionGateway.Tests.SliceIntegrationTests
 {
-    public class ChatFlowSessionManagerIntegrationTests : IClassFixture<ApiWebApplicationFactory>
+    public class ChatFlowSessionManagerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
-        private readonly ApiWebApplicationFactory _factory;
+        private readonly WebApplicationFactory<Program> _factory;
 
-        public ChatFlowSessionManagerIntegrationTests(ApiWebApplicationFactory factory)
+        public ChatFlowSessionManagerIntegrationTests(WebApplicationFactory<Program> factory)
         {
             _factory = factory;
         }
