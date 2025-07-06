@@ -1,6 +1,4 @@
 ﻿using LLMSessionGateway.API;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Core;
@@ -12,6 +10,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using Observability.Shared.Contracts;
 using StackExchange.Redis;
 using System.Text;
 using Xunit;

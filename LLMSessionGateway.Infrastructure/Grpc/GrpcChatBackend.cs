@@ -1,9 +1,9 @@
 ﻿using Grpc.Core;
 using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Core.Utilities.Functional;
+using Observability.Shared.Contracts;
+using Observability.Shared.Helpers;
 using System.Runtime.CompilerServices;
 
 namespace LLMSessionGateway.Infrastructure.Grpc

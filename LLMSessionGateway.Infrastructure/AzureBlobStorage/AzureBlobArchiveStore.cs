@@ -1,11 +1,11 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
+using Observability.Shared.Contracts;
+using Observability.Shared.Helpers;
 using System.IO.Compression;
 using System.Text.Json;
 

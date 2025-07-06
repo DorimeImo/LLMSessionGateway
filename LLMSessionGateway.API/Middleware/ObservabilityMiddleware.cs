@@ -1,5 +1,6 @@
 ﻿using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using LLMSessionGateway.Application.Contracts.Observability;
+using Observability.Shared.Contracts;
+using Observability.Shared.Helpers;
 
 namespace LLMSessionGateway.API.Middleware
 {
@@ -22,8 +23,6 @@ namespace LLMSessionGateway.API.Middleware
             _tracingService.ExtractTraceIdToLogContext(tracingOperationName);
 
             await _next(context);
-
-            _tracingService.InjectTraceContextIntoHttpResponse();
         }
     }
 }

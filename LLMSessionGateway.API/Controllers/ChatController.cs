@@ -1,12 +1,12 @@
 ﻿using LLMSessionGateway.Application.Contracts.DTOs;
 using LLMSessionGateway.Application.Contracts.ErrorHandling;
 using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core.Utilities.Functional;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Observability.Shared.Contracts;
+using Observability.Shared.Helpers;
 using System.Security.Claims;
 
 namespace LLMSessionGateway.API.Controllers

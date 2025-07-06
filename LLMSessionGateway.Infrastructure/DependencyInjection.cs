@@ -1,6 +1,4 @@
 ﻿using Azure.Storage.Blobs;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Infrastructure.AzureBlobStorage;
@@ -12,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Observability.Shared.Contracts;
+using Observability.Shared.DefaultImplementations;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;

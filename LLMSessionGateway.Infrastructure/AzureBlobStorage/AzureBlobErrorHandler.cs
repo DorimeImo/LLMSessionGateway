@@ -1,6 +1,6 @@
 ﻿using Azure;
-using LLMSessionGateway.Application.Contracts.Logging;
 using LLMSessionGateway.Core.Utilities.Functional;
+using Observability.Shared.Contracts;
 using System.Text.Json;
 
 namespace LLMSessionGateway.Infrastructure.AzureBlobStorage

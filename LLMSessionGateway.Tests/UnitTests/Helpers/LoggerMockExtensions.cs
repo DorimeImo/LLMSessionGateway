@@ -1,5 +1,6 @@
-﻿using LLMSessionGateway.Application.Contracts.Logging;
+﻿
 using Moq;
+using Observability.Shared.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;

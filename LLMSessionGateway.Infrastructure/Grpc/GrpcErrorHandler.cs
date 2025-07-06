@@ -1,6 +1,6 @@
 ﻿using Grpc.Core;
-using LLMSessionGateway.Application.Contracts.Logging;
 using LLMSessionGateway.Core.Utilities.Functional;
+using Observability.Shared.Contracts;
 
 namespace LLMSessionGateway.Infrastructure.Grpc
 {

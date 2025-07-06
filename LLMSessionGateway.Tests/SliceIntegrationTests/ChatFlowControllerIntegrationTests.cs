@@ -1,9 +1,5 @@
-﻿using FluentAssertions;
+﻿
 using LLMSessionGateway.API;
-using LLMSessionGateway.Application.Contracts.DTOs;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
-using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
@@ -14,6 +10,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using Observability.Shared.Contracts;
 using System.Text;
 using Xunit;
 

@@ -1,11 +1,10 @@
 ﻿using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Infrastructure.Grpc;
 using LLMSessionGateway.Tests.UnitTests.Helpers;
 using Moq;
+using Observability.Shared.Contracts;
 using Xunit;
 
 namespace LLMSessionGateway.Tests.UnitTests.Grpc

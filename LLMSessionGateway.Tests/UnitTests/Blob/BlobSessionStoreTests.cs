@@ -1,12 +1,11 @@
 ﻿using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Infrastructure.AzureBlobStorage;
 using LLMSessionGateway.Tests.UnitTests.Helpers;
 using Moq;
+using Observability.Shared.Contracts;
 using System.IO.Compression;
 using System.Text.Json;
 using Xunit;

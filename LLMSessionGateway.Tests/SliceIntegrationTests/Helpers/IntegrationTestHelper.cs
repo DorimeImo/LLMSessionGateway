@@ -1,10 +1,10 @@
-﻿using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
+﻿
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
 using Moq;
+using Observability.Shared.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;

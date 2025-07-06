@@ -1,6 +1,6 @@
 ﻿using LLMSessionGateway.Application.Contracts.DTOs;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
+using Observability.Shared.Contracts;
+using Observability.Shared.Helpers;
 using System.Net;
 using System.Text.Json;
 

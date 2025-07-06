@@ -1,8 +1,8 @@
 ﻿using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Core.Utilities.Functional;
+using Observability.Shared.Contracts;
+using Observability.Shared.Helpers;
 using StackExchange.Redis;
 
 namespace LLMSessionGateway.Infrastructure.Redis

@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DorimeImo.Observability.Shared" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\LLMSessionGateway.Core\LLMSessionGateway.Core.csproj" />
   </ItemGroup>
 

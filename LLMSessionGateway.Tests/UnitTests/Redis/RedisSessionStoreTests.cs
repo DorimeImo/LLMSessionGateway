@@ -1,9 +1,8 @@
-﻿using LLMSessionGateway.Application.Contracts.Logging;
-using LLMSessionGateway.Application.Contracts.Observability;
-using LLMSessionGateway.Core;
+﻿using LLMSessionGateway.Core;
 using LLMSessionGateway.Infrastructure.Redis;
 using LLMSessionGateway.Tests.UnitTests.Helpers;
 using Moq;
+using Observability.Shared.Contracts;
 using StackExchange.Redis;
 using System.Text.Json;
 using Xunit;

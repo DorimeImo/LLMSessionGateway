@@ -1,5 +1,6 @@
-﻿using LLMSessionGateway.Application.Contracts.Logging;
+﻿
 using LLMSessionGateway.Core.Utilities.Functional;
+using Observability.Shared.Contracts;
 using StackExchange.Redis;
 using System.Text.Json;
 
