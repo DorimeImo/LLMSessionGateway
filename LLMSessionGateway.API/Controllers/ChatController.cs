@@ -38,6 +38,8 @@ namespace LLMSessionGateway.API.Controllers
             {
                 var userId = GetUserIdOrThrow();
 
+                _logger.Current.UserId = userId;
+
                 var result = await _sessionManager.StartSessionAsync(userId, cancellationToken);
 
                 if (result.IsFailure)
@@ -87,6 +89,8 @@ namespace LLMSessionGateway.API.Controllers
                     await Response.WriteAsync($"data: {chunk}\n\n");
                     await Response.Body.FlushAsync();
                 }
+                await Response.WriteAsync("data: [DONE]\n\n");
+                await Response.Body.FlushAsync();
             }  
         }
 
@@ -111,26 +115,27 @@ namespace LLMSessionGateway.API.Controllers
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();;
 
-            var userFriendlyMessage = UserErrorCodeCatalog.GetMessage(result.ErrorCode);
-            if (!UserErrorCodeCatalog.IsMapped(result.ErrorCode))
+            var details = UserErrorCodeCatalog.GetErrorDetails(result.ErrorCode);
+
+            if (details.ErrorCode == "UNKNOWN")
             {
                 _logger.LogError(
                     source,
                     operation,
-                    $"Unmapped error code returned: {result.ErrorCode ?? "UNKNOWN"}"
+                    $"Unmapped error code returned: {result.ErrorCode ?? "null"}"
                 );
             }
 
             var error = new ErrorResponse
             {
-                UserFriendlyMessage = userFriendlyMessage,
+                UserFriendlyMessage = details.Message,
                 ErrorMessage = result.Error ?? "Unknown error",
-                ErrorCode = result.ErrorCode ?? "UNKNOWN",
+                ErrorCode = details.ErrorCode,
                 CorrelationId = _logger.Current.TraceId,
                 Timestamp = DateTime.UtcNow
             };
 
-            return StatusCode(500, error);
+            return StatusCode(details.StatusCode, error);
         }
 
         private string GetUserIdOrThrow()
