@@ -31,20 +31,6 @@ namespace LLMSessionGateway.Infrastructure
             services.AddSingleton<IConnectionMultiplexer>(sp =>
                 ConnectionMultiplexer.Connect(connectionString));
 
-            services.AddScoped<IActiveSessionStore>(sp =>
-            {
-                var redis = sp.GetRequiredService<IConnectionMultiplexer>();
-                var options = sp.GetRequiredService<IOptions<RedisConfigs>>().Value;
-                var logger = sp.GetRequiredService<IStructuredLogger>();
-                var tracing = sp.GetRequiredService<ITracingService>();
-
-                return new RedisActiveStore(
-                    redis,
-                    TimeSpan.FromSeconds(options.ActiveSessionTtlSeconds),
-                    logger,
-                    tracing);
-            });
-
             services.AddScoped<IDistributedLockManager>(sp =>
             {
                 var redis = sp.GetRequiredService<IConnectionMultiplexer>();
@@ -57,6 +43,22 @@ namespace LLMSessionGateway.Infrastructure
                     logger,
                     tracing,
                     TimeSpan.FromSeconds(options.LockTtlSeconds));
+            });
+
+            services.AddScoped<IActiveSessionStore>(sp =>
+            {
+                var redis = sp.GetRequiredService<IConnectionMultiplexer>();
+                var options = sp.GetRequiredService<IOptions<RedisConfigs>>().Value;
+                var logger = sp.GetRequiredService<IStructuredLogger>();
+                var tracing = sp.GetRequiredService<ITracingService>();
+                var lockManager = sp.GetRequiredService<IDistributedLockManager>();
+
+                return new RedisActiveStore(
+                    redis,
+                    TimeSpan.FromSeconds(options.ActiveSessionTtlSeconds),
+                    logger,
+                    tracing,
+                    lockManager);
             });
 
             return services;

@@ -2,12 +2,12 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using LLMSessionGateway.Infrastructure.Grpc;
-using LLMSessionGateway.Tests.UnitTests.Helpers;
+using LLMSessionGateway.Tests.UnitTests.Infrastructure.Helpers;
 using Moq;
 using Observability.Shared.Contracts;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.UnitTests.Grpc
+namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
 {
     public class GrpcChatBackendTests
     {

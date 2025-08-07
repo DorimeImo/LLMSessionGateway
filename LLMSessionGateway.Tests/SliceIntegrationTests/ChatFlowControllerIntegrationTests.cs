@@ -37,7 +37,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    services.RemoveAll<ISessionManager>();
+                    services.RemoveAll<IChatSessionOrchestrator>();
                     services.RemoveAll<IStructuredLogger>();
                     services.RemoveAll<ITracingService>();
 
@@ -75,9 +75,9 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
             sessionManagerMock.Verify(m => m.EndSessionAsync(It.IsAny<string>()), Times.Once);
         }
 
-        private static Mock<ISessionManager> CreateSessionManagerMock()
+        private static Mock<IChatSessionOrchestrator> CreateSessionManagerMock()
         {
-            var mock = new Mock<ISessionManager>();
+            var mock = new Mock<IChatSessionOrchestrator>();
             var fakeSession = new ChatSession { SessionId = "abc", UserId = "user" };
 
             mock.Setup(m => m.StartSessionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

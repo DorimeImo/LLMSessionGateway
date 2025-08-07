@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DorimeImo.Observability.Shared" Version="1.1.0" />
+    <PackageReference Include="DorimeImo.Observability.Shared" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
   </ItemGroup>
 

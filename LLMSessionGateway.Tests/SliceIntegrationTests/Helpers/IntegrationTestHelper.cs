@@ -3,6 +3,7 @@ using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
+using LLMSessionGateway.Infrastructure.Redis;
 using Moq;
 using Observability.Shared.Contracts;
 using System;
@@ -140,15 +141,32 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
 
         public static void ConfigureLockManagerMock(Mock<IDistributedLockManager> mock)
         {
-            mock.Setup(m => m.AcquireLockAsync(
+            mock.Setup(m => m.RunWithLockAsync(
                     It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Result<string>.Success("test-lock-value"));
+                    It.IsAny<Func<CancellationToken, Task<Result<string>>>>(),
+                    It.IsAny<CancellationToken>()
+                ))
+                .Returns<string, Func<CancellationToken, Task<Result<string>>>, CancellationToken>(
+                    async (key, action, ct) => await action(ct)
+                );
 
-            mock.Setup(m => m.ReleaseLockAsync(
+            mock.Setup(m => m.RunWithLockAsync(
                     It.IsAny<string>(),
-                    It.IsAny<string>()))
-                .ReturnsAsync(Result<Unit>.Success(Unit.Value));
+                    It.IsAny<Func<CancellationToken, Task<Result<ChatSession>>>>(),
+                    It.IsAny<CancellationToken>()
+                ))
+                .Returns<string, Func<CancellationToken, Task<Result<ChatSession>>>, CancellationToken>(
+                    async (key, action, ct) => await action(ct)
+                );
+
+            mock.Setup(m => m.RunWithLockAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<CancellationToken, Task<Result<Unit>>>>(),
+                    It.IsAny<CancellationToken>()
+                ))
+                .Returns<string, Func<CancellationToken, Task<Result<Unit>>>, CancellationToken>(
+                    async (key, action, ct) => await action(ct)
+                );
         }
     }
 }

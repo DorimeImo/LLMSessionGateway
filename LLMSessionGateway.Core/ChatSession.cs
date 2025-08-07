@@ -12,22 +12,8 @@ namespace LLMSessionGateway.Core
         public required string UserId { get; init; }
         public string Version { get; set; } = "v1";
         public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-        public DateTime LastInteraction { get; private set; } = DateTime.UtcNow;
+        public DateTime LastInteraction { get; set; } = DateTime.UtcNow;
         public List<ChatMessage> Messages { get; init; } = new();
         public string? AssignedModelInstance { get; set; }
-
-        public bool IsIdle(TimeSpan idleTimeout) =>
-        DateTime.UtcNow - LastInteraction > idleTimeout;
-
-        public void AddMessage(ChatMessage message)
-        {
-            Messages.Add(message);
-            Touch();
-        }
-
-        private void Touch()
-        {
-            LastInteraction = DateTime.UtcNow;
-        }
     }
 }

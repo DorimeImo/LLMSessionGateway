@@ -1,18 +1,20 @@
 ﻿using LLMSessionGateway.Core;
+using LLMSessionGateway.Core.Utilities.Functional;
 using LLMSessionGateway.Infrastructure.Redis;
-using LLMSessionGateway.Tests.UnitTests.Helpers;
+using LLMSessionGateway.Tests.UnitTests.Infrastructure.Helpers;
 using Moq;
 using Observability.Shared.Contracts;
 using StackExchange.Redis;
 using System.Text.Json;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.UnitTests.Redis
+namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Redis
 {
     public class RedisSessionStoreTests
     {
         private readonly Mock<IDatabase> _mockDb;
         private readonly Mock<IStructuredLogger> _loggerMock;
+        private readonly Mock<IDistributedLockManager> _lockManagerMock;
         private readonly RedisActiveStore _store;
         private readonly TimeSpan _ttl = TimeSpan.FromMinutes(30);
 
@@ -20,6 +22,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Redis
         {
             _mockDb = new Mock<IDatabase>();
             _loggerMock = new Mock<IStructuredLogger>();
+            _lockManagerMock = new Mock<IDistributedLockManager>();
 
             var mockConnection = new Mock<IConnectionMultiplexer>();
             mockConnection
@@ -30,8 +33,13 @@ namespace LLMSessionGateway.Tests.UnitTests.Redis
                 mockConnection.Object,
                 _ttl,
                 _loggerMock.Object,
-                new Mock<ITracingService>().Object
+                new Mock<ITracingService>().Object,
+                _lockManagerMock.Object
             );
+
+            SetupLockManagerMock(Result<string>.Success("mock"));
+            SetupLockManagerMock(Result<ChatSession>.Success(new ChatSession { SessionId = "mock", UserId = "mock" }));
+            SetupLockManagerMock(Result<Unit>.Success(Unit.Value));
         }
 
             // -----------------------------------------
@@ -242,5 +250,18 @@ namespace LLMSessionGateway.Tests.UnitTests.Redis
                 new ChatMessage { Role = ChatRole.User, Content = "Hello", Timestamp = DateTime.UtcNow }
             }
         };
+
+        private void SetupLockManagerMock<T>(Result<T> result)
+        {
+            _lockManagerMock
+                .Setup(m => m.RunWithLockAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<CancellationToken, Task<Result<T>>>>(),
+                    It.IsAny<CancellationToken>()
+                ))
+                .Returns<string, Func<CancellationToken, Task<Result<T>>>, CancellationToken>(
+                    async (key, action, ct) => await action(ct)
+                );
+        }
     }
 }

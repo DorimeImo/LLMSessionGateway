@@ -1,5 +1,4 @@
-﻿using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using LLMSessionGateway.Application.Contracts.Ports;
+﻿using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
 using Observability.Shared.Contracts;
@@ -14,6 +13,7 @@ namespace LLMSessionGateway.Infrastructure.Redis
     {
         private readonly IDatabase _redisDb;
         private readonly TimeSpan _sessionTtl;
+        private readonly IDistributedLockManager _lockManager;
 
         private static readonly LuaScript ConditionalDeleteScript = LuaScript.Prepare(@"
             if redis.call('get', KEYS[1]) == ARGV[1] then
@@ -25,10 +25,17 @@ namespace LLMSessionGateway.Infrastructure.Redis
         private readonly IStructuredLogger _logger;
         private readonly ITracingService _tracingService;
 
-        public RedisActiveStore(IConnectionMultiplexer redis, TimeSpan sessionTtl, IStructuredLogger logger, ITracingService tracingService)
+        public RedisActiveStore(
+            IConnectionMultiplexer redis, 
+            TimeSpan sessionTtl, 
+            IStructuredLogger logger, 
+            ITracingService tracingService,
+            IDistributedLockManager lockManager
+            )
         {
             _redisDb = redis.GetDatabase();
             _sessionTtl = sessionTtl;
+            _lockManager = lockManager;
             _logger = logger;
             _tracingService = tracingService;
         }
@@ -36,7 +43,7 @@ namespace LLMSessionGateway.Infrastructure.Redis
         public async Task<Result<string>> GetActiveSessionIdAsync(string userId, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -44,10 +51,17 @@ namespace LLMSessionGateway.Infrastructure.Redis
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    var value = await _redisDb.StringGetAsync(NamingConventionBuilder.UserActiveKeyBuild(userId));
-                    return value.HasValue
-                        ? Result<string>.Success(value.ToString())
-                        : Result<string>.Failure("No active session found", errorCode: "SESSION_NOT_FOUND", isRetryable: false);
+                    return await _lockManager.RunWithLockAsync(
+                        LockKeyBuild(userId),
+                        async ct =>
+                        {
+                            var value = await _redisDb.StringGetAsync(UserActiveKeyBuild(userId));
+                            return value.HasValue
+                                ? Result<string>.Success(value.ToString())
+                                : Result<string>.Failure("No active session found", errorCode: "SESSION_NOT_FOUND", isRetryable: false);
+                        },
+                        cancellationToken
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -59,7 +73,7 @@ namespace LLMSessionGateway.Infrastructure.Redis
         public async Task<Result<ChatSession>> GetSessionAsync(string sessionId, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -67,7 +81,7 @@ namespace LLMSessionGateway.Infrastructure.Redis
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    var json = await _redisDb.StringGetAsync(NamingConventionBuilder.SessionKeyBuild(sessionId));
+                    var json = await _redisDb.StringGetAsync(SessionKeyBuild(sessionId));
                     if (!json.HasValue)
                     {
                         return Result<ChatSession>.Failure("Session not found", errorCode: "SESSION_NOT_FOUND", isRetryable: false);
@@ -86,7 +100,7 @@ namespace LLMSessionGateway.Infrastructure.Redis
         public async Task<Result<Unit>> SaveSessionAsync(ChatSession session, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -94,18 +108,26 @@ namespace LLMSessionGateway.Infrastructure.Redis
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    var json = JsonSerializer.Serialize(session);
+                    string lockKey = LockKeyBuild(session.UserId);
 
-                    var tran = _redisDb.CreateTransaction();
+                    return await _lockManager.RunWithLockAsync<Unit>(
+                        lockKey,
+                        async ct =>
+                        {
+                            var json = JsonSerializer.Serialize(session);
 
-                    _ = tran.StringSetAsync(NamingConventionBuilder.SessionKeyBuild(session.SessionId), json, _sessionTtl);
-                    _ = tran.StringSetAsync(NamingConventionBuilder.UserActiveKeyBuild(session.UserId), session.SessionId, _sessionTtl);
+                            var tran = _redisDb.CreateTransaction();
+                            _ = tran.StringSetAsync(SessionKeyBuild(session.SessionId), json, _sessionTtl);
+                            _ = tran.StringSetAsync(UserActiveKeyBuild(session.UserId), session.SessionId, _sessionTtl);
 
-                    bool committed = await tran.ExecuteAsync();
+                            bool committed = await tran.ExecuteAsync();
 
-                    return committed
-                        ? Result<Unit>.Success(Unit.Value)
-                        : Result<Unit>.Failure("Redis transaction failed to save session", errorCode: "TRANSACTION_FAILED", isRetryable: true);
+                            return committed
+                                ? Result<Unit>.Success(Unit.Value)
+                                : Result<Unit>.Failure("Redis transaction failed to save session", errorCode: "TRANSACTION_FAILED", isRetryable: true);
+                        },
+                        cancellationToken
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -117,7 +139,7 @@ namespace LLMSessionGateway.Infrastructure.Redis
         public async Task<Result<Unit>> DeleteSessionAsync(ChatSession session, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -125,18 +147,27 @@ namespace LLMSessionGateway.Infrastructure.Redis
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    await _redisDb.KeyDeleteAsync(NamingConventionBuilder.SessionKeyBuild(session.SessionId));
+                    var result = await _lockManager.RunWithLockAsync(
+                        LockKeyBuild(session.UserId),
+                        async ct =>
+                        {
+                            await _redisDb.KeyDeleteAsync(SessionKeyBuild(session.SessionId));
 
-                    var userActiveKey = NamingConventionBuilder.UserActiveKeyBuild(session.UserId);
-                    var expectedSessionId = session.SessionId;
+                            var userActiveKey = UserActiveKeyBuild(session.UserId);
+                            var expectedSessionId = session.SessionId;
 
-                    await _redisDb.ScriptEvaluateAsync(ConditionalDeleteScript, new
-                    {
-                        KEYS = new[] { userActiveKey },
-                        ARGV = new[] { expectedSessionId }
-                    });
+                            await _redisDb.ScriptEvaluateAsync(ConditionalDeleteScript, new
+                            {
+                                KEYS = new[] { userActiveKey },
+                                ARGV = new[] { expectedSessionId }
+                            });
 
-                    return Result<Unit>.Success(Unit.Value);
+                            return Result<Unit>.Success(Unit.Value);
+                        },
+                        cancellationToken
+                    );
+
+                    return result;
                 }
                 catch (Exception ex)
                 {
@@ -145,9 +176,8 @@ namespace LLMSessionGateway.Infrastructure.Redis
             }   
         }
 
-        public Task<Result<Unit>> AppendMessageAsync(ChatSession session, ChatMessage message, CancellationToken ct)
-        {
-            return Task.FromResult(Result<Unit>.Failure("AppendMessageAsync is not supported in Redis", errorCode: "NOT_SUPPORTED"));
-        }
+        private string UserActiveKeyBuild(string userId) => $"chat_user:{userId}:active";
+        private string SessionKeyBuild(string sessionId) => $"chat_session:{sessionId}";
+        private string LockKeyBuild(string userId) => $"chat_lock:{userId}";
     }
 }

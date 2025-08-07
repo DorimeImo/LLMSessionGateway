@@ -1,5 +1,4 @@
-﻿
-using Moq;
+﻿using Moq;
 using Observability.Shared.Contracts;
 using System;
 using System.Collections.Generic;
@@ -7,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Tests.UnitTests.Helpers
+namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Helpers
 {
     public static class LoggerMockExtensions
     {

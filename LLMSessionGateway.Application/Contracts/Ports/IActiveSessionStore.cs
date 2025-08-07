@@ -14,6 +14,5 @@ namespace LLMSessionGateway.Application.Contracts.Ports
         Task<Result<ChatSession>> GetSessionAsync(string sessionId, CancellationToken ct = default);
         Task<Result<Unit>> SaveSessionAsync(ChatSession session, CancellationToken ct = default);
         Task<Result<Unit>> DeleteSessionAsync(ChatSession session, CancellationToken ct = default);
-        Task<Result<Unit>> AppendMessageAsync(ChatSession session, ChatMessage message, CancellationToken ct = default);
     }
 }

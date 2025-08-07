@@ -5,11 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Application.Contracts.Ports
+namespace LLMSessionGateway.Infrastructure.Redis
 {
     public interface IDistributedLockManager
     {
-        Task<Result<string>> AcquireLockAsync(string lockKey, CancellationToken ct = default);
-        Task<Result<Unit>> ReleaseLockAsync(string lockKey, string lockValue);
+        Task<Result<T>> RunWithLockAsync<T>(string lockKey, Func<CancellationToken, Task<Result<T>>> action, CancellationToken ct = default);
     }
 }

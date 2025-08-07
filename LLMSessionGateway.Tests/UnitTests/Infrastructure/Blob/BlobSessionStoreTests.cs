@@ -3,14 +3,14 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Infrastructure.AzureBlobStorage;
-using LLMSessionGateway.Tests.UnitTests.Helpers;
+using LLMSessionGateway.Tests.UnitTests.Infrastructure.Helpers;
 using Moq;
 using Observability.Shared.Contracts;
 using System.IO.Compression;
 using System.Text.Json;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.UnitTests.Blob
+namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Blob
 {
     public class BlobSessionStoreTests
     {

@@ -1,6 +1,4 @@
-﻿using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using LLMSessionGateway.Application.Contracts.Ports;
-using LLMSessionGateway.Core.Utilities.Functional;
+﻿using LLMSessionGateway.Core.Utilities.Functional;
 using Observability.Shared.Contracts;
 using Observability.Shared.Helpers;
 using StackExchange.Redis;
@@ -29,51 +27,53 @@ namespace LLMSessionGateway.Infrastructure.Redis
             _lockTtl = lockTtl;
         }
 
-        public async Task<Result<string>> AcquireLockAsync(string lockKey, CancellationToken ct)
+        public async Task<Result<T>> RunWithLockAsync<T>(
+        string lockKey,
+        Func<CancellationToken, Task<Result<T>>> action,
+        CancellationToken ct = default)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperation = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
-            using (_tracingService.StartActivity(tracingOperationName))
+            using (_tracingService.StartActivity(tracingOperation))
             {
+                var lockValue = Guid.NewGuid().ToString();
+
                 try
                 {
                     ct.ThrowIfCancellationRequested();
 
-                    var lockValue = Guid.NewGuid().ToString();
-                    bool acquired = await _redisDb.StringSetAsync(lockKey, lockValue, _lockTtl, When.NotExists);
-
+                    var acquired = await _redisDb.StringSetAsync(lockKey, lockValue, _lockTtl, When.NotExists);
                     if (!acquired)
                     {
-                        return Result<string>.Failure("Failed to acquire Redis lock", errorCode: "REDIS_LOCK_FAILED", isRetryable: true);
+                        return Result<T>.Failure(
+                            "Failed to acquire Redis lock",
+                            errorCode: "REDIS_LOCK_FAILED",
+                            isRetryable: true);
                     }
 
-                    return Result<string>.Success(lockValue);
+                    return await action(ct);
                 }
                 catch (Exception ex)
                 {
-                    return RedisErrorHandler.Handle<string>(ex, source, operation, _logger);
+                    return RedisErrorHandler.Handle<T>(ex, source, operation, _logger);
                 }
-            }  
-        }
-
-        public async Task<Result<Unit>> ReleaseLockAsync(string lockKey, string lockValue)
-        {
-            var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
-
-            using (_tracingService.StartActivity(tracingOperationName))
-            {
-                try
+                finally
                 {
-                    await _redisDb.ScriptEvaluateAsync(UnlockScript, new { KEYS = new[] { lockKey }, ARGV = new[] { lockValue } });
-                    return Result<Unit>.Success(Unit.Value);
+                    try
+                    {
+                        await _redisDb.ScriptEvaluateAsync(UnlockScript, new
+                        {
+                            KEYS = new[] { lockKey },
+                            ARGV = new[] { lockValue }
+                        });
+                    }
+                    catch (Exception releaseEx)
+                    {
+                        _logger.LogError(source, operation, $"Failed to release lock {lockKey}. Error: {releaseEx.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    return RedisErrorHandler.Handle<Unit>(ex, source, operation, _logger);
-                }
-            } 
+            }
         }
     }
 }

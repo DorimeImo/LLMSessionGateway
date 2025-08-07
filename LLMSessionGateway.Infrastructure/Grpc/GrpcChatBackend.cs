@@ -1,5 +1,4 @@
 ﻿using Grpc.Core;
-using LLMSessionGateway.Application.Contracts.KeyGeneration;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Core.Utilities.Functional;
 using Observability.Shared.Contracts;
@@ -27,7 +26,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
         public async Task<Result<Unit>> OpenConnectionAsync(string sessionId, string userId, CancellationToken ct)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -54,7 +53,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
         public async Task<Result<Unit>> SendUserMessageAsync(string sessionId, string message, CancellationToken ct)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -80,7 +79,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
         public async IAsyncEnumerable<string> StreamAssistantReplyAsync(string sessionId, [EnumeratorCancellation] CancellationToken ct)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -120,7 +119,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
         public async Task<Result<Unit>> CloseConnectionAsync(string sessionId)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {

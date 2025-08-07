@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace LLMSessionGateway.Application.Services
 {
     //Interface for session lifecycle (create, send, stream, end)
-    public interface ISessionManager
+    public interface IChatSessionOrchestrator
     {
         Task<Result<ChatSession>> StartSessionAsync(string userId, CancellationToken ct = default);
         Task<Result<Unit>> SendMessageAsync(string sessionId, string message, CancellationToken ct = default);

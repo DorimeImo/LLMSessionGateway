@@ -1,5 +1,4 @@
-﻿using LLMSessionGateway.Application.Contracts.KeyGeneration;
-using Observability.Shared.Contracts;
+﻿using Observability.Shared.Contracts;
 using Observability.Shared.Helpers;
 
 namespace LLMSessionGateway.API.Middleware
@@ -18,7 +17,7 @@ namespace LLMSessionGateway.API.Middleware
         public async Task Invoke(HttpContext context)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             _tracingService.ExtractTraceIdToLogContext(tracingOperationName);
 

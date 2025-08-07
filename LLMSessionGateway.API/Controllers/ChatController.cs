@@ -1,6 +1,5 @@
 ﻿using LLMSessionGateway.Application.Contracts.DTOs;
 using LLMSessionGateway.Application.Contracts.ErrorHandling;
-using LLMSessionGateway.Application.Contracts.KeyGeneration;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core.Utilities.Functional;
 using Microsoft.AspNetCore.Authorization;
@@ -16,12 +15,12 @@ namespace LLMSessionGateway.API.Controllers
     [Route("api/chat")]
     public class ChatController : ControllerBase
     {
-        private readonly ISessionManager _sessionManager;
+        private readonly IChatSessionOrchestrator _sessionManager;
 
         private readonly IStructuredLogger _logger;
         private readonly ITracingService _tracingService;
 
-        public ChatController(ISessionManager sessionManager, IStructuredLogger structuredLogger, ITracingService tracingService)
+        public ChatController(IChatSessionOrchestrator sessionManager, IStructuredLogger structuredLogger, ITracingService tracingService)
         {
             _sessionManager = sessionManager;
             _logger = structuredLogger;
@@ -32,7 +31,7 @@ namespace LLMSessionGateway.API.Controllers
         public async Task<IActionResult> StartSession(CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -61,7 +60,7 @@ namespace LLMSessionGateway.API.Controllers
         public async Task<IActionResult> SendMessage([FromQuery] string sessionId, [FromBody] string message, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -78,7 +77,7 @@ namespace LLMSessionGateway.API.Controllers
         public async Task StreamReply([FromQuery] string sessionId, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -98,7 +97,7 @@ namespace LLMSessionGateway.API.Controllers
         public async Task<IActionResult> EndSession([FromQuery] string sessionId)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {

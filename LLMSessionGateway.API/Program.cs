@@ -1,6 +1,5 @@
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Infrastructure;
-using LLMSessionGateway.Services.Application;
 
 namespace LLMSessionGateway.API
 {
@@ -23,7 +22,7 @@ namespace LLMSessionGateway.API
                 .AddPollyRetryPolicy(builder.Configuration);
 
             // Application services
-            builder.Services.AddScoped<ISessionManager, ChatSessionManager>();
+            builder.Services.AddScoped<IChatSessionOrchestrator, ChatSessionOrchestrator>();
 
             // API pipeline
             builder.Services.AddControllers();

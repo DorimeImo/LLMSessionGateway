@@ -1,6 +1,5 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using LLMSessionGateway.Application.Contracts.KeyGeneration;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
@@ -28,13 +27,13 @@ namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
         public async Task<Result<Unit>> PersistSessionAsync(ChatSession session, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
                 try
                 {
-                    var blobName = NamingConventionBuilder.BlobSessionPathBuild(session.UserId, session.SessionId, session.CreatedAt);
+                    var blobName = BlobSessionPathBuild(session.UserId, session.SessionId, session.CreatedAt);
                     var blobClient = _containerClient.GetBlobClient(blobName);
 
                     var sessionBytes = JsonSerializer.SerializeToUtf8Bytes(session);
@@ -59,13 +58,13 @@ namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
         public async Task<Result<ChatSession>> GetSessionAsync(string userId, string sessionId, DateTime createdAt, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
                 try
                 {
-                    var blobName = NamingConventionBuilder.BlobSessionPathBuild(userId, sessionId, createdAt);
+                    var blobName = BlobSessionPathBuild(userId, sessionId, createdAt);
                     var blobClient = _containerClient.GetBlobClient(blobName);
 
                     if (!await blobClient.ExistsAsync(cancellationToken))
@@ -89,7 +88,7 @@ namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
         public async Task<Result<IEnumerable<(string sessionId, DateTime createdAt)>>> GetAllSessionIdsAsync(string userId, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
-            var tracingOperationName = NamingConventionBuilder.TracingOperationNameBuild((source, operation));
+            var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
@@ -135,5 +134,11 @@ namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
                 }
             }     
         }
+
+        private string BlobSessionPathBuild(string userId, string sessionId, DateTime createdAt)
+        {
+            return $"sessions/{userId}/{sessionId}/{createdAt:yyyyMMddHHmmss}.json";
+        }
+
     }
 }
