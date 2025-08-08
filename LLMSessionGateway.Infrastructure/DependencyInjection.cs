@@ -3,11 +3,13 @@ using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Infrastructure.AzureBlobStorage;
 using LLMSessionGateway.Infrastructure.Grpc;
+using LLMSessionGateway.Infrastructure.HealthChecks;
 using LLMSessionGateway.Infrastructure.Observability;
 using LLMSessionGateway.Infrastructure.Redis;
 using LLMSessionGateway.Infrastructure.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Observability.Shared.Contracts;
@@ -68,10 +70,15 @@ namespace LLMSessionGateway.Infrastructure
         {
             services.Configure<AzureBlobConfigs>(config.GetSection("AzureBlob"));
 
-            var connectionString = config.GetConnectionString("AzureBlob")
-                ?? throw new InvalidOperationException("Azure Blob connection string is not configured.");
+            services.AddSingleton(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<AzureBlobConfigs>>().Value;
 
-            services.AddSingleton(sp => new BlobServiceClient(connectionString));
+                if (string.IsNullOrWhiteSpace(options.ConnectionString))
+                    throw new InvalidOperationException("Azure Blob connection string is not configured.");
+
+                return new BlobServiceClient(options.ConnectionString);
+            });
 
             services.AddScoped<IArchiveSessionStore>(sp =>
             {
@@ -91,8 +98,12 @@ namespace LLMSessionGateway.Infrastructure
 
         public static IServiceCollection AddGrpcChatBackend(this IServiceCollection services, IConfiguration config)
         {
-            var grpcAddress = config.GetConnectionString("GrpcChatService")
+            services.Configure<GrpcConfigs>(config.GetSection("Grpc:ChatService"));
+
+            var grpcConfigs = config.GetSection("Grpc:ChatService").Get<GrpcConfigs>()
                 ?? throw new InvalidOperationException("GrpcChatService connection string is not configured.");
+
+            var grpcAddress = $"http://{grpcConfigs.Host}:{grpcConfigs.Port}";
 
             services.AddGrpcClient<ChatService.ChatServiceClient>(o =>
             {
@@ -163,6 +174,36 @@ namespace LLMSessionGateway.Infrastructure
         public static IServiceCollection AddPollyRetryPolicy(this IServiceCollection services, IConfiguration config)
         {
             services.AddSingleton<IRetryPolicyRunner, RetryPolicies>();
+            return services;
+        }
+
+        public static IServiceCollection AddGatewayHealthChecks(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddHealthChecks()
+                .Add(new HealthCheckRegistration(
+                        "redis",
+                        sp => new RedisHealthCheck(
+                            sp.GetRequiredService<IConnectionMultiplexer>()
+                        ),
+                        failureStatus: HealthStatus.Unhealthy,
+                        tags: new[] { "ready" }))
+                .Add(new HealthCheckRegistration(
+                        "azureBlob",
+                        sp => new AzureBlobHealthCheck(
+                            sp.GetRequiredService<BlobServiceClient>(),
+                            sp.GetRequiredService<IOptions<AzureBlobConfigs>>().Value.ContainerName),
+                        failureStatus: HealthStatus.Unhealthy,
+                        tags: new[] { "ready" }))
+                .Add(new HealthCheckRegistration(
+                        "grpcEndpoint",
+                        sp =>
+                        {
+                            var cfg = sp.GetRequiredService<IOptions<GrpcConfigs>>().Value;
+                            return new GrpcEndpointHealthCheck(cfg.Host, cfg.Port, timeoutMs: 800);
+                        },
+                        failureStatus: HealthStatus.Unhealthy,
+                        tags: new[] { "ready" }));
+
             return services;
         }
     }
