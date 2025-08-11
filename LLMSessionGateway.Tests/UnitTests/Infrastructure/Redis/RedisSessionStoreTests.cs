@@ -247,7 +247,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Redis
             UserId = "u1",
             Messages = new List<ChatMessage>
             {
-                new ChatMessage { Role = ChatRole.User, Content = "Hello", Timestamp = DateTime.UtcNow }
+                new ChatMessage { MessageId = "m1", Role = ChatRole.User, Content = "Hello", Timestamp = DateTime.UtcNow }
             }
         };
 

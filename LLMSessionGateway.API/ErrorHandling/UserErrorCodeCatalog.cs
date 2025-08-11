@@ -1,20 +1,24 @@
-﻿namespace LLMSessionGateway.Application.Contracts.ErrorHandling
+namespace LLMSessionGateway.API.ErrorHandling
 {
     public static class UserErrorCodeCatalog
     {
-        private static readonly Dictionary<string, (string Message, int StatusCode)> _errorMap = new()
+        private static readonly Dictionary<string, (string Message, int StatusCode)> _errorMap = new(StringComparer.OrdinalIgnoreCase)
         {
             ["SESSION_NOT_FOUND"] = (
                 "The selected session is not available. Please choose a different session or start a new one.",
                 404
             ),
-                    ["REDIS_LOCK_FAILED"] = (
+            ["REDIS_LOCK_FAILED"] = (
                 "You already have an active session. Please end it before starting a new one.",
                 409
             ),
-                    ["CANCELLED"] = (
+            ["CANCELLED"] = (
                 "The operation was cancelled. Please try again.",
                 400
+            ),
+            ["DUPLICATE_MESSAGE"] = (
+                "This message was already received. Please wait for it to be processed.",
+                409
             )
         };
 
@@ -37,3 +41,4 @@
         }
     }
 }
+

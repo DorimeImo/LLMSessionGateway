@@ -1,4 +1,5 @@
-﻿using LLMSessionGateway.Application.Contracts.Ports;
+﻿using LLMSessionGateway.Application.Contracts.Commands;
+using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Application.Helpers;
 using LLMSessionGateway.Core;
@@ -30,7 +31,7 @@ namespace LLMSessionGateway.Application.Services
             _logger = logger;
         }
 
-        public async Task<Result<Unit>> AddMessageAsync(string sessionId, ChatRole role, string content, CancellationToken ct = default)
+        public async Task<Result<Unit>> AddMessageAsync(SendMessageCommand command, ChatRole role, CancellationToken ct = default)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var tracingOperation = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
@@ -38,7 +39,7 @@ namespace LLMSessionGateway.Application.Services
             using (_tracingService.StartActivity(tracingOperation))
             {
                 var sessionResult = await _retryRunner.ExecuteAsyncWithRetryAndFinalyze<ChatSession>(
-                    ct => _activeSessionStore.GetSessionAsync(sessionId, ct),
+                    ct => _activeSessionStore.GetSessionAsync(command.SessionId, ct),
                     ct,
                     onRetry: RetryLogger.LogRetry<ChatSession>(_logger, tracingOperation)
                 );
@@ -48,7 +49,17 @@ namespace LLMSessionGateway.Application.Services
 
                 var session = sessionResult.Value;
 
-                _sessionService.AddMessage(session, role, content);
+                ChatMessage chatMessage = new ChatMessage()
+                {
+                    MessageId = command.MessageId,
+                    Role = role,
+                    Content = command.Message
+                };
+
+                if(!_sessionService.AddMessageIfAbsent(session, chatMessage))
+                {
+                    return Result<Unit>.Failure("Duplicate message", errorCode: "duplicate_message");
+                }
 
                 var updateResult = await _retryRunner.ExecuteAsyncWithRetryAndFinalyze<Unit>(
                     ct => _activeSessionStore.SaveSessionAsync(session, ct),

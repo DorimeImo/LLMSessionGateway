@@ -8,17 +8,14 @@ namespace LLMSessionGateway.Core
 {
     public class ChatSessionService : IChatSessionService
     {
-        public void AddMessage(ChatSession session, ChatRole role, string content)
+        public bool AddMessageIfAbsent(ChatSession session, ChatMessage message)
         {
-            var userMessage = new ChatMessage
-            {
-                Role = role,
-                Content = content,
-                Timestamp = DateTime.UtcNow
-            };
+            if (session.Messages.Any(m => m.MessageId == message.MessageId))
+                return false;
 
-            session.Messages.Add(userMessage);
-            Touch(session, userMessage.Timestamp);
+            session.Messages.Add(message);
+            Touch(session, message.Timestamp);
+            return true;
         }
 
         public bool IsIdle(ChatSession session, TimeSpan idleTimeout)

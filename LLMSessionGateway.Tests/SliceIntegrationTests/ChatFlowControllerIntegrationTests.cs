@@ -32,6 +32,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
             var sessionManagerMock = CreateSessionManagerMock();
             var loggerMock = IntegrationTestHelpers.CreateLoggerMock();
             var tracingMock = IntegrationTestHelpers.CreateTracingMock();
+            var sendBody = new { message = "hello", messageId = "m1" };
 
             var client = _factory.WithWebHostBuilder(builder =>
             {
@@ -58,7 +59,10 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
 
             // Act
             var startResponse = await client.PostAsync("/api/v1/chat/start", null);
-            var sendContent = new StringContent("\"hello\"", Encoding.UTF8, "application/json");
+            var sendContent = new StringContent(
+                System.Text.Json.JsonSerializer.Serialize(sendBody),
+                Encoding.UTF8,
+                "application/json");
             var sendResponse = await client.PostAsync("/api/v1/chat/send?sessionId=abc", sendContent);
             var streamResponse = await client.GetAsync("/api/v1/chat/stream?sessionId=abc");
             var endResponse = await client.PostAsync("/api/v1/chat/end?sessionId=abc", null);
@@ -70,7 +74,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
             await IntegrationTestHelpers.AssertResponseSuccess(endResponse, "EndSession");
 
             sessionManagerMock.Verify(m => m.StartSessionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-            sessionManagerMock.Verify(m => m.SendMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            sessionManagerMock.Verify(m => m.SendMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
             sessionManagerMock.Verify(m => m.StreamReplyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
             sessionManagerMock.Verify(m => m.EndSessionAsync(It.IsAny<string>()), Times.Once);
         }
@@ -83,7 +87,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
             mock.Setup(m => m.StartSessionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<ChatSession>.Success(fakeSession));
 
-            mock.Setup(m => m.SendMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mock.Setup(m => m.SendMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
             mock.Setup(m => m.StreamReplyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

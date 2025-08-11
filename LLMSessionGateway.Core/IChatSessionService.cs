@@ -8,7 +8,7 @@ namespace LLMSessionGateway.Core
 {
     public interface IChatSessionService
     {
-        void AddMessage(ChatSession session, ChatRole role, string content);
+        bool AddMessageIfAbsent(ChatSession session, ChatMessage message);
         bool IsIdle(ChatSession session, TimeSpan idleTimeout);
     }
 }

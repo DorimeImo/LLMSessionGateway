@@ -1,6 +1,8 @@
-using Asp.Versioning.Conventions;
 using Asp.Versioning;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using LLMSessionGateway.API.Controllers;
+using LLMSessionGateway.API.Validation;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -51,7 +53,6 @@ namespace LLMSessionGateway.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                // We’ll fill docs per version at runtime using the provider below
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "LLMSessionGateway API",
@@ -62,8 +63,13 @@ namespace LLMSessionGateway.API
 
             // API pipeline
             builder.Services.AddControllers();
+            builder.Services.AddFluentValidationAutoValidation();
+            builder.Services.AddValidatorsFromAssemblyContaining<SendMessageRequestValidator>();
 
             var app = builder.Build();
+
+            // Middleware
+            app.UseGlobalExceptionHandlerMiddlewareExtension();
 
             app.MapControllers();
 

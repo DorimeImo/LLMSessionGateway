@@ -250,7 +250,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Blob
                 CreatedAt = DateTime.UtcNow,
                 Messages = new List<ChatMessage>
                 {
-                new() { Role = ChatRole.User, Content = "Hello", Timestamp = DateTime.UtcNow }
+                new() { MessageId = "m1", Role = ChatRole.User, Content = "Hello", Timestamp = DateTime.UtcNow }
                 }
             };
 

@@ -1,5 +1,5 @@
-﻿using LLMSessionGateway.Application.Contracts.DTOs;
-using LLMSessionGateway.Application.Contracts.ErrorHandling;
+﻿using LLMSessionGateway.API.DTOs;
+using LLMSessionGateway.API.ErrorHandling;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core.Utilities.Functional;
 using Microsoft.AspNetCore.Authorization;
@@ -37,6 +37,7 @@ namespace LLMSessionGateway.API.Controllers
             {
                 var userId = GetUserIdOrThrow();
 
+                //TODO: needs to be refactored. Not clean
                 _logger.Current.UserId = userId;
 
                 var result = await _sessionManager.StartSessionAsync(userId, cancellationToken);
@@ -57,14 +58,14 @@ namespace LLMSessionGateway.API.Controllers
         }
 
         [HttpPost("send")]
-        public async Task<IActionResult> SendMessage([FromQuery] string sessionId, [FromBody] string message, CancellationToken cancellationToken)
+        public async Task<IActionResult> SendMessage([FromQuery] string sessionId, [FromBody] SendMessageRequest request, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
-                var result = await _sessionManager.SendMessageAsync(sessionId, message, cancellationToken);
+                var result = await _sessionManager.SendMessageAsync(sessionId, request.Message!, request.MessageId!, cancellationToken);
 
                 if (result.IsFailure)
                     return ToErrorResponse(result);

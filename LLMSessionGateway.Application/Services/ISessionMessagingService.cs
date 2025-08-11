@@ -1,4 +1,5 @@
-﻿using LLMSessionGateway.Core.Utilities.Functional;
+﻿using LLMSessionGateway.Application.Contracts.Commands;
+using LLMSessionGateway.Core.Utilities.Functional;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace LLMSessionGateway.Application.Services
 {
     public interface ISessionMessagingService
     {
-        Task<Result<Unit>> SendMessageAsync(string sessionId, string userMessage, CancellationToken ct = default);
+        Task<Result<Unit>> SendMessageAsync(SendMessageCommand command, CancellationToken ct = default);
         IAsyncEnumerable<string> StreamReplyAsync(string sessionId, CancellationToken ct = default);
     }
 }

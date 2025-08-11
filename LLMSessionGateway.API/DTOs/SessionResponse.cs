@@ -1,4 +1,4 @@
-﻿namespace LLMSessionGateway.Application.Contracts.DTOs
+namespace LLMSessionGateway.API.DTOs
 {
     public class SessionResponse
     {
@@ -6,3 +6,4 @@
         public DateTime CreatedAt { get; set; }
     }
 }
+

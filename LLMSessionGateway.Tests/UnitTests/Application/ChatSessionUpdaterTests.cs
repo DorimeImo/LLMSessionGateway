@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using LLMSessionGateway.Application.Contracts.Commands;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Application.Services;
@@ -7,6 +8,7 @@ using LLMSessionGateway.Core.Utilities.Functional;
 using LLMSessionGateway.Tests.UnitTests.Application.Helpers;
 using Moq;
 using Observability.Shared.Contracts;
+using System.ComponentModel.Design;
 using Xunit;
 
 namespace LLMSessionGateway.Tests.UnitTests.Application
@@ -38,26 +40,32 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
         {
             // Arrange
             var userId = "user123";
-            var sessionId = "session-123";
+            var command = CreateCommand();
             var role = ChatRole.User;
-            var content = "hello";
-            var session = new ChatSession { SessionId = sessionId, UserId = userId };
+            var session = new ChatSession { SessionId = command.SessionId, UserId = userId };
 
             _activeStoreMock
-                .Setup(s => s.GetSessionAsync(sessionId, It.IsAny<CancellationToken>()))
+                .Setup(s => s.GetSessionAsync(command.SessionId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<ChatSession>.Success(session));
+
+            _sessionServiceMock
+                .Setup(s => s.AddMessageIfAbsent(session, It.Is<ChatMessage>(m =>
+                    m.MessageId == command.MessageId &&
+                    m.Role == ChatRole.User &&
+                    m.Content == command.Message)))
+                .Returns(true);
 
             _activeStoreMock
                 .Setup(s => s.SaveSessionAsync(session, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
             // Act
-            var result = await _updater.AddMessageAsync(sessionId, role, content);
+            var result = await _updater.AddMessageAsync(command, role);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
-            _sessionServiceMock.Verify(s => s.AddMessage(session, role, content), Times.Once);
-            _activeStoreMock.Verify(s => s.GetSessionAsync(sessionId, It.IsAny<CancellationToken>()), Times.Once);
+            _sessionServiceMock.VerifyAll();
+            _activeStoreMock.Verify(s => s.GetSessionAsync(command.SessionId, It.IsAny<CancellationToken>()), Times.Once);
             _activeStoreMock.Verify(s => s.SaveSessionAsync(session, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -65,19 +73,43 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
         public async Task AddMessageAsync_ShouldReturnFailure_WhenSessionNotFound()
         {
             // Arrange
-            var sessionId = "unknown-session";
+            var command = CreateCommand();
 
             _activeStoreMock
-                .Setup(s => s.GetSessionAsync(sessionId, It.IsAny<CancellationToken>()))
+                .Setup(s => s.GetSessionAsync(command.SessionId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<ChatSession>.Failure("not found"));
 
             // Act
-            var result = await _updater.AddMessageAsync(sessionId, ChatRole.User, "msg");
+            var result = await _updater.AddMessageAsync(command, ChatRole.User);
 
             // Assert
             result.IsFailure.Should().BeTrue();
             result.ErrorCode.Should().Be("session_not_found");
-            _sessionServiceMock.Verify(s => s.AddMessage(It.IsAny<ChatSession>(), It.IsAny<ChatRole>(), It.IsAny<string>()), Times.Never);
+            _sessionServiceMock.Verify(s => s.AddMessageIfAbsent(It.IsAny<ChatSession>(), It.IsAny<ChatMessage>()), Times.Never);
+            _activeStoreMock.Verify(s => s.SaveSessionAsync(It.IsAny<ChatSession>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task AddMessageAsync_ReturnsFailure_WhenDuplicateMessage()
+        {
+            // Arrange
+            var cmd = CreateCommand();
+            var session = new ChatSession { SessionId = cmd.SessionId, UserId = "u1" };
+
+            _activeStoreMock
+                .Setup(s => s.GetSessionAsync(cmd.SessionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Result<ChatSession>.Success(session));
+
+            _sessionServiceMock
+                .Setup(s => s.AddMessageIfAbsent(session, It.IsAny<ChatMessage>()))
+                .Returns(false);
+
+            // Act
+            var result = await _updater.AddMessageAsync(cmd, ChatRole.User);
+
+            // Assert
+            result.IsFailure.Should().BeTrue();
+            result.ErrorCode.Should().Be("duplicate_message"); 
             _activeStoreMock.Verify(s => s.SaveSessionAsync(It.IsAny<ChatSession>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -85,26 +117,39 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
         public async Task AddMessageAsync_ShouldReturnFailure_WhenSaveFails()
         {
             // Arrange
-            var userId = "user123";
-            var sessionId = "session-123";
-            var session = new ChatSession { SessionId = sessionId, UserId = userId };
+            var userId = "u1";
+            var command = CreateCommand();
+            var session = new ChatSession { SessionId = command.SessionId, UserId = userId };
 
             _activeStoreMock
-                .Setup(s => s.GetSessionAsync(sessionId, It.IsAny<CancellationToken>()))
+                .Setup(s => s.GetSessionAsync(command.SessionId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<ChatSession>.Success(session));
+
+            _sessionServiceMock
+                .Setup(s => s.AddMessageIfAbsent(session, It.IsAny<ChatMessage>()))
+                .Returns(true);
 
             _activeStoreMock
                 .Setup(s => s.SaveSessionAsync(session, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Failure("save failed"));
 
             // Act
-            var result = await _updater.AddMessageAsync(sessionId, ChatRole.Assistant, "response");
+            var result = await _updater.AddMessageAsync(command, ChatRole.Assistant);
 
             // Assert
             result.IsFailure.Should().BeTrue();
             result.Error.Should().Be("save failed");
-            _sessionServiceMock.Verify(s => s.AddMessage(session, ChatRole.Assistant, "response"), Times.Once);
+            _sessionServiceMock.Verify(s => s.AddMessageIfAbsent(session, It.IsAny<ChatMessage>()), Times.Once);
+        }
+
+        private SendMessageCommand CreateCommand()
+        {
+            return new SendMessageCommand()
+            {
+                SessionId = "s1",
+                MessageId = "m1",
+                Message = "message"
+            };
         }
     }
-
 }

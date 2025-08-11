@@ -1,4 +1,5 @@
-﻿using LLMSessionGateway.Application.Contracts.Ports;
+﻿using LLMSessionGateway.Application.Contracts.Commands;
+using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Application.Helpers;
 using LLMSessionGateway.Core.Utilities.Functional;
@@ -26,7 +27,7 @@ namespace LLMSessionGateway.Application.Services
             _logger = logger;
         }
 
-        public async Task<Result<Unit>> SendMessageAsync(string sessionId, string message, CancellationToken ct = default)
+        public async Task<Result<Unit>> SendMessageAsync(SendMessageCommand command, CancellationToken ct = default)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var tracingName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
@@ -34,7 +35,7 @@ namespace LLMSessionGateway.Application.Services
             using (_tracingService.StartActivity(tracingName))
             {
                 return await _retryRunner.ExecuteAsyncWithRetryAndFinalyze<Unit>(
-                    ct => _chatBackend.SendUserMessageAsync(sessionId, message, ct),
+                    ct => _chatBackend.SendUserMessageAsync(command.SessionId, command.Message, ct),
                     ct,
                     onRetry: RetryLogger.LogRetry<Unit>(_logger, tracingName));
             }

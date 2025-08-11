@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using LLMSessionGateway.Application.Contracts.Commands;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Application.Services;
@@ -39,34 +40,32 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
         public async Task SendMessageAsync_ShouldReturnSuccess_WhenBackendSucceeds()
         {
             // Arrange
-            var sessionId = "s1";
-            var message = "hello";
+            var command = CreateCommand();
 
             _chatBackendMock
-                .Setup(b => b.SendUserMessageAsync(sessionId, message, It.IsAny<CancellationToken>()))
+                .Setup(b => b.SendUserMessageAsync(command.SessionId, command.Message, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
             // Act
-            var result = await _service.SendMessageAsync(sessionId, message);
+            var result = await _service.SendMessageAsync(command);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
-            _chatBackendMock.Verify(b => b.SendUserMessageAsync(sessionId, message, It.IsAny<CancellationToken>()), Times.Once);
+            _chatBackendMock.Verify(b => b.SendUserMessageAsync(command.SessionId, command.Message, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task SendMessageAsync_ShouldReturnFailure_WhenBackendFails()
         {
             // Arrange
-            var sessionId = "s1";
-            var message = "fail";
+            var command = CreateCommand();
 
             _chatBackendMock
-                .Setup(b => b.SendUserMessageAsync(sessionId, message, It.IsAny<CancellationToken>()))
+                .Setup(b => b.SendUserMessageAsync(command.SessionId, command.Message, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Failure("backend error"));
 
             // Act
-            var result = await _service.SendMessageAsync(sessionId, message);
+            var result = await _service.SendMessageAsync(command);
 
             // Assert
             result.IsFailure.Should().BeTrue();
@@ -96,6 +95,16 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
             yield return "message 1";
             yield return "message 2";
             await Task.CompletedTask;
+        }
+
+        private SendMessageCommand CreateCommand()
+        {
+            return new SendMessageCommand()
+            { 
+              SessionId = "s1",
+              MessageId = "m1",
+              Message = "message"
+            };
         }
     }
 }

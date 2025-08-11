@@ -1,4 +1,5 @@
-﻿using LLMSessionGateway.Core;
+﻿using LLMSessionGateway.Application.Contracts.Commands;
+using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
 
 namespace LLMSessionGateway.Application.Services
@@ -24,13 +25,14 @@ namespace LLMSessionGateway.Application.Services
             return await _lifecycle.StartSessionAsync(userId, ct);
         }
 
-        public async Task<Result<Unit>> SendMessageAsync(string sessionId, string message, CancellationToken ct = default)
+        public async Task<Result<Unit>> SendMessageAsync(string sessionId, string message, string messageId, CancellationToken ct = default)
         {
-            var updateResult = await _updater.AddMessageAsync(sessionId, ChatRole.User, message, ct);
+            SendMessageCommand sendMessageCommand = new SendMessageCommand() { SessionId = sessionId, Message = message, MessageId = messageId };
+            var updateResult = await _updater.AddMessageAsync(sendMessageCommand, ChatRole.User, ct);
             if (updateResult.IsFailure)
                 return updateResult;
 
-            return await _messaging.SendMessageAsync(sessionId, message, ct);
+            return await _messaging.SendMessageAsync(sendMessageCommand, ct);
         }
 
         public IAsyncEnumerable<string> StreamReplyAsync(string sessionId, CancellationToken cancellationToken)

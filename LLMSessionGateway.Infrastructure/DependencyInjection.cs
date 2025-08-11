@@ -117,8 +117,6 @@ namespace LLMSessionGateway.Infrastructure
 
         public static IServiceCollection AddOpenTelemetryTracing(this IServiceCollection services, IConfiguration config)
         {
-            services.AddScoped<ITracingService, OpenTelemetryTracingService>();
-
             var jaegerConfig = config.GetSection("OpenTelemetry:Jaeger").Get<JaegerConfigs>()
                 ?? throw new InvalidOperationException("OpenTelemetry:Jaeger config is missing.");
 
@@ -141,6 +139,14 @@ namespace LLMSessionGateway.Infrastructure
                         o.AgentPort = jaegerConfig.AgentPort;
                     });
                 });
+
+            services.AddScoped<ITracingService>(sp =>
+            {
+                var svc = ActivatorUtilities.CreateInstance<OpenTelemetryTracingService>(sp);
+                // run after Activity is created
+                svc.ExtractTraceIdToLogContext();
+                return svc;
+            });
 
             services.AddHttpContextAccessor();
 

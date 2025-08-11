@@ -1,4 +1,4 @@
-﻿namespace LLMSessionGateway.Application.Contracts.DTOs
+namespace LLMSessionGateway.API.DTOs
 {
     public class ErrorResponse
     {
@@ -10,3 +10,4 @@
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }
+

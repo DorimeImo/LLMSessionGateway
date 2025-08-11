@@ -1,4 +1,4 @@
-﻿using LLMSessionGateway.Application.Contracts.DTOs;
+﻿using LLMSessionGateway.API.DTOs;
 using Observability.Shared.Contracts;
 using Observability.Shared.Helpers;
 using System.Net;
@@ -10,32 +10,31 @@ namespace LLMSessionGateway.API.Middleware
     {
         private readonly RequestDelegate _next;
 
-        private readonly IStructuredLogger _logger;
-
-        public GlobalExceptionHandlerMiddleware(RequestDelegate next, IStructuredLogger structuredLogger)
+        public GlobalExceptionHandlerMiddleware(RequestDelegate next)
         {
             _next = next;
-            _logger = structuredLogger;
         }
 
         public async Task Invoke(HttpContext context)
         {
+            var logger = context.RequestServices.GetRequiredService<IStructuredLogger>();
+
             try
             {
                 await _next(context);
             }
             catch (Exception ex)
             {
-                await HandleExceptionAsync(context, ex);
+                await HandleExceptionAsync(context, ex, logger);
             }
         }
 
-        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception, IStructuredLogger logger)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var errorCode = "UNHANDLED_ERROR";
 
-            _logger.LogCritical(source, operation, "Unhandled exception.", exception);
+            logger.LogCritical(source, operation, "Unhandled exception.", exception);
 
             var errorResponse = new ErrorResponse
             {
@@ -43,7 +42,7 @@ namespace LLMSessionGateway.API.Middleware
                 ErrorMessage = exception.Message,
                 ErrorCode = errorCode,
                 IsRetryable = false,
-                CorrelationId = _logger.Current.TraceId,
+                CorrelationId = logger.Current.TraceId,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -57,10 +56,10 @@ namespace LLMSessionGateway.API.Middleware
             }
             catch (Exception serializationEx)
             {
-                _logger.LogError(source, operation, "Failed to serialize ErrorResponse.", serializationEx);
+                logger.LogError(source, operation, "Failed to serialize ErrorResponse.", serializationEx);
 
                 await context.Response.WriteAsync(
-                    $"{{\"message\":\"An unexpected error occurred.\",\"correlationId\":\"{_logger.Current.TraceId}\"}}");
+                    $"{{\"message\":\"An unexpected error occurred.\",\"correlationId\":\"{logger.Current.TraceId}\"}}");
             } 
         }
     }

@@ -1,4 +1,5 @@
-﻿using LLMSessionGateway.Core;
+﻿using LLMSessionGateway.Application.Contracts.Commands;
+using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,6 @@ namespace LLMSessionGateway.Application.Services
 {
     public interface IChatSessionUpdater
     {
-        Task<Result<Unit>> AddMessageAsync(string sessionId, ChatRole role, string content, CancellationToken ct = default);
+        Task<Result<Unit>> AddMessageAsync(SendMessageCommand command, ChatRole role, CancellationToken ct = default);
     }
 }
