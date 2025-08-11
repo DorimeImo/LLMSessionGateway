@@ -57,11 +57,11 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
             }).CreateClient();
 
             // Act
-            var startResponse = await client.PostAsync("/api/chat/start", null);
+            var startResponse = await client.PostAsync("/api/v1/chat/start", null);
             var sendContent = new StringContent("\"hello\"", Encoding.UTF8, "application/json");
-            var sendResponse = await client.PostAsync("/api/chat/send?sessionId=abc", sendContent);
-            var streamResponse = await client.GetAsync("/api/chat/stream?sessionId=abc");
-            var endResponse = await client.PostAsync("/api/chat/end?sessionId=abc", null);
+            var sendResponse = await client.PostAsync("/api/v1/chat/send?sessionId=abc", sendContent);
+            var streamResponse = await client.GetAsync("/api/v1/chat/stream?sessionId=abc");
+            var endResponse = await client.PostAsync("/api/v1/chat/end?sessionId=abc", null);
 
             // Assert
             await IntegrationTestHelpers.AssertResponseSuccess(startResponse, "StartSession");
