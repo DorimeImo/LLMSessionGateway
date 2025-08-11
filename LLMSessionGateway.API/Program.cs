@@ -1,6 +1,10 @@
+using Asp.Versioning.Conventions;
+using Asp.Versioning;
+using LLMSessionGateway.API.Controllers;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
 using System.Text.Json;
 
 namespace LLMSessionGateway.API
@@ -11,10 +15,11 @@ namespace LLMSessionGateway.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Auth
             builder.Services.AddAuthentication();
             builder.Services.AddAuthorization();
 
-            // Infrastructure registrations
+            // Infrastructure registration
             builder.Services
                 .AddRedisActiveSessionStore(builder.Configuration)
                 .AddAzureBlobArchiveStore(builder.Configuration)
@@ -24,8 +29,36 @@ namespace LLMSessionGateway.API
                 .AddPollyRetryPolicy(builder.Configuration)
                 .AddGatewayHealthChecks(builder.Configuration);
 
-            // Application services
+            //Application services registration
             builder.Services.AddScoped<IChatSessionOrchestrator, ChatSessionOrchestrator>();
+
+            //API Versioning
+            builder.Services.AddApiVersioning(options =>
+            {
+                options.ReportApiVersions = true;       
+                options.ApiVersionReader = new UrlSegmentApiVersionReader(); // Versioning verification middleware
+            }).AddMvc(mvc =>
+            {
+                mvc.Conventions.Controller<ChatController>()
+                   .HasApiVersion(new ApiVersion(1, 0));
+            }).AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";                
+                options.SubstituteApiVersionInUrl = true;
+            });
+
+            //Swagger (OpenAPI)
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                // We’ll fill docs per version at runtime using the provider below
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "LLMSessionGateway API",
+                    Version = "v1",
+                    Description = "Session management and AI model routing endpoints (versioned)"
+                });
+            });
 
             // API pipeline
             builder.Services.AddControllers();
@@ -34,13 +67,13 @@ namespace LLMSessionGateway.API
 
             app.MapControllers();
 
-            // Liveness: cheap self-check
+            // Health Check: Liveness: cheap self-check
             app.MapHealthChecks("/health", new HealthCheckOptions
             {
                 Predicate = _ => false,
             }).AllowAnonymous();
 
-            // Readiness: only checks tagged "ready" (Redis, Blob, gRPC)
+            // Health Check: Readiness: only checks tagged "ready"
             app.MapHealthChecks("/ready", new HealthCheckOptions
             {
                 Predicate = reg => reg.Tags.Contains("ready"),

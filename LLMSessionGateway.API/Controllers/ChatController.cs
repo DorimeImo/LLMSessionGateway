@@ -12,7 +12,7 @@ namespace LLMSessionGateway.API.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/chat")]
+    [Route("api/v{version:apiVersion}/chat")]
     public class ChatController : ControllerBase
     {
         private readonly IChatSessionOrchestrator _sessionManager;
