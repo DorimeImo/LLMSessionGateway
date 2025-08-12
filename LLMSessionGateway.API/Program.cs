@@ -2,6 +2,7 @@ using Asp.Versioning;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using LLMSessionGateway.API.Controllers;
+using LLMSessionGateway.API.Hosting;
 using LLMSessionGateway.API.Validation;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Infrastructure;
@@ -17,11 +18,11 @@ namespace LLMSessionGateway.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Auth
+            //Auth
             builder.Services.AddAuthentication();
             builder.Services.AddAuthorization();
 
-            // Infrastructure registration
+            //Infrastructure registration
             builder.Services
                 .AddRedisActiveSessionStore(builder.Configuration)
                 .AddAzureBlobArchiveStore(builder.Configuration)
@@ -61,25 +62,31 @@ namespace LLMSessionGateway.API
                 });
             });
 
-            // API pipeline
+            //API pipeline
             builder.Services.AddControllers();
+
+            //API Request Validation
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddValidatorsFromAssemblyContaining<SendMessageRequestValidator>();
 
+            //API Request Limits
+            builder.Services
+                .AddApiLimits(builder.Configuration);
+
             var app = builder.Build();
 
-            // Middleware
+            //Middleware
             app.UseGlobalExceptionHandlerMiddlewareExtension();
 
             app.MapControllers();
 
-            // Health Check: Liveness: cheap self-check
+            //Health Check: Liveness: cheap self-check
             app.MapHealthChecks("/health", new HealthCheckOptions
             {
                 Predicate = _ => false,
             }).AllowAnonymous();
 
-            // Health Check: Readiness: only checks tagged "ready"
+            //Health Check: Readiness: only checks tagged "ready"
             app.MapHealthChecks("/ready", new HealthCheckOptions
             {
                 Predicate = reg => reg.Tags.Contains("ready"),
