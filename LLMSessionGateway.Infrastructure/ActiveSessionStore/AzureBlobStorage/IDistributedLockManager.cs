@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Infrastructure.Redis
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage
 {
     public interface IDistributedLockManager
     {

@@ -3,7 +3,7 @@ using LLMSessionGateway.Core.Utilities.Functional;
 using Observability.Shared.Contracts;
 using System.Text.Json;
 
-namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
+namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis
 {
     public static class AzureBlobErrorHandler
     {

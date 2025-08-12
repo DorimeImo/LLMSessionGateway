@@ -8,7 +8,7 @@ using Observability.Shared.Helpers;
 using System.IO.Compression;
 using System.Text.Json;
 
-namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
+namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis
 {
     public class AzureBlobArchiveStore : IArchiveSessionStore
     {

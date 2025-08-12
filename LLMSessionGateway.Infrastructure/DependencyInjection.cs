@@ -1,11 +1,10 @@
 ﻿using Azure.Storage.Blobs;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
-using LLMSessionGateway.Infrastructure.AzureBlobStorage;
 using LLMSessionGateway.Infrastructure.Grpc;
 using LLMSessionGateway.Infrastructure.HealthChecks;
 using LLMSessionGateway.Infrastructure.Observability;
-using LLMSessionGateway.Infrastructure.Redis;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore;
 using LLMSessionGateway.Infrastructure.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +17,8 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using StackExchange.Redis;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
 
 namespace LLMSessionGateway.Infrastructure
 {
@@ -99,6 +100,7 @@ namespace LLMSessionGateway.Infrastructure
         public static IServiceCollection AddGrpcChatBackend(this IServiceCollection services, IConfiguration config)
         {
             services.Configure<GrpcConfigs>(config.GetSection("Grpc:ChatService"));
+            services.Configure<GrpcTimeoutsOptions>(config.GetSection("Grpc:Timeouts"));
 
             var grpcConfigs = config.GetSection("Grpc:ChatService").Get<GrpcConfigs>()
                 ?? throw new InvalidOperationException("GrpcChatService connection string is not configured.");

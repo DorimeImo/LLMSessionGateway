@@ -1,6 +1,4 @@
-﻿
-
-namespace LLMSessionGateway.Infrastructure.AzureBlobStorage
+﻿namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis
 {
     public class AzureBlobConfigs
     {

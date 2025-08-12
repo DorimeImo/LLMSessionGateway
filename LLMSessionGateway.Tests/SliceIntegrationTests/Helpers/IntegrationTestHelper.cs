@@ -3,7 +3,7 @@ using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
-using LLMSessionGateway.Infrastructure.Redis;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
 using Moq;
 using Observability.Shared.Contracts;
 using System;

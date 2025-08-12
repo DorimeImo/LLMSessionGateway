@@ -1,10 +1,9 @@
-﻿
-using LLMSessionGateway.Core.Utilities.Functional;
+﻿using LLMSessionGateway.Core.Utilities.Functional;
 using Observability.Shared.Contracts;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace LLMSessionGateway.Infrastructure.Redis
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage
 {
     public static class RedisErrorHandler
     {

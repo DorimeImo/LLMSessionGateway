@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
 using LLMSessionGateway.Core.Utilities.Functional;
-using LLMSessionGateway.Infrastructure.Redis;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
 using Moq;
 using Observability.Shared.Contracts;
 using StackExchange.Redis;

@@ -12,15 +12,18 @@ namespace LLMSessionGateway.Infrastructure.Grpc
         private readonly ChatService.ChatServiceClient _grpcClient;
         private readonly IStructuredLogger _logger;
         private readonly ITracingService _tracingService;
+        private readonly GrpcTimeoutsOptions _timeouts;
 
         public GrpcChatBackend(
             ChatService.ChatServiceClient grpcClient,
             IStructuredLogger logger,
-            ITracingService tracingService)
+            ITracingService tracingService,
+            GrpcTimeoutsOptions timeouts)
         {
             _grpcClient = grpcClient;
             _logger = logger;
             _tracingService = tracingService;
+            _timeouts = timeouts;
         }
 
         public async Task<Result<Unit>> OpenConnectionAsync(string sessionId, string userId, CancellationToken ct)
@@ -33,6 +36,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                 try
                 {
                     ct.ThrowIfCancellationRequested();
+                    var deadline = DateTime.UtcNow.Add(_timeouts.OpenSession);
 
                     var request = new OpenSessionRequest
                     {
@@ -40,7 +44,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                         UserId = userId
                     };
 
-                    await _grpcClient.OpenSessionAsync(request, cancellationToken: ct);
+                    await _grpcClient.OpenSessionAsync(request, deadline: deadline, cancellationToken: ct);
                     return Result<Unit>.Success(Unit.Value);
                 }
                 catch (Exception ex)
@@ -60,12 +64,13 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                 try
                 {
                     ct.ThrowIfCancellationRequested();
+                    var deadline = DateTime.UtcNow.Add(_timeouts.SendMessage);
 
                     await _grpcClient.SendMessageAsync(new UserMessageRequest
                     {
                         SessionId = sessionId,
                         Message = message
-                    }, cancellationToken: ct);
+                    }, deadline: deadline, cancellationToken: ct);
 
                     return Result<Unit>.Success(Unit.Value);
                 }
@@ -88,8 +93,10 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                 try
                 {
                     ct.ThrowIfCancellationRequested();
+                    var setupDeadline = DateTime.UtcNow.Add(_timeouts.StreamReplySetup);
 
-                    call = _grpcClient.StreamReply(new StreamReplyRequest { SessionId = sessionId }, cancellationToken: ct);
+                    call = _grpcClient.StreamReply(new StreamReplyRequest { SessionId = sessionId }, 
+                                                    deadline: setupDeadline, cancellationToken: ct);
                 }
                 catch (Exception ex)
                 {
@@ -125,7 +132,10 @@ namespace LLMSessionGateway.Infrastructure.Grpc
             {
                 try
                 {
-                    await _grpcClient.CloseSessionAsync(new CloseSessionRequest { SessionId = sessionId });
+                    var deadline = DateTime.UtcNow.Add(_timeouts.CloseSession);
+
+                    await _grpcClient.CloseSessionAsync(new CloseSessionRequest { SessionId = sessionId },
+                                                        deadline: deadline);
                     return Result<Unit>.Success(Unit.Value);
                 }
                 catch (Exception ex)

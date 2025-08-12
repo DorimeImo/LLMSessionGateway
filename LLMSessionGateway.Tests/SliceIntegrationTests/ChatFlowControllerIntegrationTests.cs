@@ -1,5 +1,6 @@
 ﻿
 using LLMSessionGateway.API;
+using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
@@ -41,6 +42,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
                     services.RemoveAll<IChatSessionOrchestrator>();
                     services.RemoveAll<IStructuredLogger>();
                     services.RemoveAll<ITracingService>();
+                    services.RemoveAll<IChatBackend>();
 
                     services.AddScoped(_ => sessionManagerMock.Object);
                     services.AddScoped(_ => loggerMock.Object);

@@ -3,7 +3,7 @@ using Observability.Shared.Contracts;
 using Observability.Shared.Helpers;
 using StackExchange.Redis;
 
-namespace LLMSessionGateway.Infrastructure.Redis
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage
 {
     public class RedisLockManager : IDistributedLockManager
     {

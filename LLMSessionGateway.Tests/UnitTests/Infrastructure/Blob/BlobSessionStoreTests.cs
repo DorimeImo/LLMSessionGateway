@@ -2,7 +2,7 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using LLMSessionGateway.Core;
-using LLMSessionGateway.Infrastructure.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
 using LLMSessionGateway.Tests.UnitTests.Infrastructure.Helpers;
 using Moq;
 using Observability.Shared.Contracts;

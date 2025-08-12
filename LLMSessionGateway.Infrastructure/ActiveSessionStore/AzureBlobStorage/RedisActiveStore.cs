@@ -6,7 +6,7 @@ using Observability.Shared.Helpers;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace LLMSessionGateway.Infrastructure.Redis
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage
 {
     //TODO: перегрузку Redis
     public class RedisActiveStore : IActiveSessionStore
@@ -110,7 +110,7 @@ namespace LLMSessionGateway.Infrastructure.Redis
 
                     string lockKey = LockKeyBuild(session.UserId);
 
-                    return await _lockManager.RunWithLockAsync<Unit>(
+                    return await _lockManager.RunWithLockAsync(
                         lockKey,
                         async ct =>
                         {
