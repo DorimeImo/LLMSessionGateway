@@ -24,6 +24,7 @@ namespace LLMSessionGateway.API
 
             //Infrastructure registration
             builder.Services
+                .AddConfigurationValidation(builder.Configuration)
                 .AddRedisActiveSessionStore(builder.Configuration)
                 .AddAzureBlobArchiveStore(builder.Configuration)
                 .AddGrpcChatBackend(builder.Configuration)

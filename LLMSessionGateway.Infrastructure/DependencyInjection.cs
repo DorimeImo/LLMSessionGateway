@@ -24,15 +24,70 @@ namespace LLMSessionGateway.Infrastructure
 {
     public static class DependencyInjection
     {
+        public static IServiceCollection AddConfigurationValidation(
+            this IServiceCollection services, IConfiguration config)
+        {
+            // Redis
+            services.AddOptions<RedisConfigs>()
+                .Bind(config.GetSection("Redis"))
+                .ValidateDataAnnotations()
+                .Validate(o => o.LockTtlSeconds > 0, "Redis:LockTtlSeconds must be > 0.")
+                .Validate(o => o.ActiveSessionTtlSeconds > 0, "Redis:ActiveSessionTtlSeconds must be > 0.")
+                .ValidateOnStart();
+
+            // Azure Blob
+            services.AddOptions<AzureBlobConfigs>()
+                .Bind(config.GetSection("AzureBlob"))
+                .ValidateDataAnnotations()
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ConnectionString),
+                    "AzureBlob:ConnectionString is required.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ContainerName),
+                    "AzureBlob:ContainerName is required.")
+                .ValidateOnStart();
+
+            // gRPC endpoint
+            services.AddOptions<GrpcConfigs>()
+                .Bind(config.GetSection("Grpc:ChatService"))
+                .ValidateDataAnnotations()
+                .Validate(o => !string.IsNullOrWhiteSpace(o.Host), "Grpc:ChatService:Host is required.")
+                .Validate(o => o.Port is > 0 and <= 65535, "Grpc:ChatService:Port must be 1..65535.")
+                .ValidateOnStart();
+
+            // gRPC per-call timeouts
+            services.AddOptions<GrpcTimeoutsOptions>()
+                .Bind(config.GetSection("Grpc:Timeouts"))
+                .Validate(o => o.OpenSession > TimeSpan.Zero, "Grpc:Timeouts:OpenSession must be > 0.")
+                .Validate(o => o.SendMessage > TimeSpan.Zero, "Grpc:Timeouts:SendMessage must be > 0.")
+                .Validate(o => o.StreamReplySetup > TimeSpan.Zero, "Grpc:Timeouts:StreamReplySetup must be > 0.")
+                .Validate(o => o.CloseSession > TimeSpan.Zero, "Grpc:Timeouts:CloseSession must be > 0.")
+                .ValidateOnStart();
+
+            // Logging
+            services.AddOptions<FileLoggingConfig>()
+                .Bind(config.GetSection("Logging:File"))
+                .ValidateDataAnnotations()
+                .Validate(o => Enum.TryParse<RollingInterval>(o.RollingInterval, out _),
+                    "Logging:File:RollingInterval must be a valid Serilog RollingInterval.")
+                .ValidateOnStart();
+
+            // OpenTelemetry
+            services.AddOptions<JaegerConfigs>()
+                .Bind(config.GetSection("OpenTelemetry:Jaeger"))
+                .ValidateDataAnnotations()
+                .Validate(o => o.AgentPort is > 0 and <= 65535,
+                    "OpenTelemetry:Jaeger:AgentPort must be 1..65535.")
+                .ValidateOnStart();
+
+            return services;
+        }
+
         public static IServiceCollection AddRedisActiveSessionStore(this IServiceCollection services, IConfiguration config)
         {
             services.Configure<RedisConfigs>(config.GetSection("Redis"));
 
-            var connectionString = config.GetConnectionString("Redis")
-                ?? throw new InvalidOperationException("Redis connection string is not configured.");
-
             services.AddSingleton<IConnectionMultiplexer>(sp =>
-                ConnectionMultiplexer.Connect(connectionString));
+                ConnectionMultiplexer.Connect(
+                    sp.GetRequiredService<IOptions<RedisConfigs>>().Value.ConnectionString));
 
             services.AddScoped<IDistributedLockManager>(sp =>
             {
@@ -75,9 +130,6 @@ namespace LLMSessionGateway.Infrastructure
             {
                 var options = sp.GetRequiredService<IOptions<AzureBlobConfigs>>().Value;
 
-                if (string.IsNullOrWhiteSpace(options.ConnectionString))
-                    throw new InvalidOperationException("Azure Blob connection string is not configured.");
-
                 return new BlobServiceClient(options.ConnectionString);
             });
 
@@ -88,10 +140,9 @@ namespace LLMSessionGateway.Infrastructure
                 var tracer = sp.GetRequiredService<ITracingService>();
                 var config = sp.GetRequiredService<IConfiguration>();
 
-                var containerName = config.GetSection("AzureBlob")["ContainerName"]
-                    ?? throw new InvalidOperationException("Container name not configured.");
+                var containerName = config.GetSection("AzureBlob")["ContainerName"];
 
-                return new AzureBlobArchiveStore(blobServiceClient, containerName, logger, tracer);
+                return new AzureBlobArchiveStore(blobServiceClient, containerName!, logger, tracer);
             });
 
             return services;
@@ -102,10 +153,9 @@ namespace LLMSessionGateway.Infrastructure
             services.Configure<GrpcConfigs>(config.GetSection("Grpc:ChatService"));
             services.Configure<GrpcTimeoutsOptions>(config.GetSection("Grpc:Timeouts"));
 
-            var grpcConfigs = config.GetSection("Grpc:ChatService").Get<GrpcConfigs>()
-                ?? throw new InvalidOperationException("GrpcChatService connection string is not configured.");
+            var grpcConfigs = config.GetSection("Grpc:ChatService").Get<GrpcConfigs>();
 
-            var grpcAddress = $"http://{grpcConfigs.Host}:{grpcConfigs.Port}";
+            var grpcAddress = $"http://{grpcConfigs!.Host}:{grpcConfigs.Port}";
 
             services.AddGrpcClient<ChatService.ChatServiceClient>(o =>
             {
@@ -119,8 +169,7 @@ namespace LLMSessionGateway.Infrastructure
 
         public static IServiceCollection AddOpenTelemetryTracing(this IServiceCollection services, IConfiguration config)
         {
-            var jaegerConfig = config.GetSection("OpenTelemetry:Jaeger").Get<JaegerConfigs>()
-                ?? throw new InvalidOperationException("OpenTelemetry:Jaeger config is missing.");
+            var jaegerConfig = config.GetSection("OpenTelemetry:Jaeger").Get<JaegerConfigs>();
 
             services.AddOpenTelemetry()
                 .WithTracing(builder =>
@@ -137,7 +186,7 @@ namespace LLMSessionGateway.Infrastructure
 
                     builder.AddJaegerExporter(o =>
                     {
-                        o.AgentHost = jaegerConfig.AgentHost;
+                        o.AgentHost = jaegerConfig!.AgentHost;
                         o.AgentPort = jaegerConfig.AgentPort;
                     });
                 });
@@ -162,10 +211,9 @@ namespace LLMSessionGateway.Infrastructure
 
             var fileConfig = config
                 .GetSection("Logging:File")
-                .Get<FileLoggingConfig>()
-                ?? throw new InvalidOperationException("Logging:File configuration section is missing.");
+                .Get<FileLoggingConfig>();
 
-            if (!Enum.TryParse<RollingInterval>(fileConfig.RollingInterval, out var rollingInterval))
+            if (!Enum.TryParse<RollingInterval>(fileConfig!.RollingInterval, out var rollingInterval))
             {
                 throw new InvalidOperationException($"Invalid RollingInterval: {fileConfig.RollingInterval}");
             }

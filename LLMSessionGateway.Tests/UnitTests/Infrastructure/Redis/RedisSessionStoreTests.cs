@@ -139,7 +139,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Redis
 
         [Theory]
         [MemberData(nameof(ExceptionTestData))]
-        public async Task GetSessionAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode, bool isRetryable)
+        public async Task GetSessionAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode)
         {
             // Arrange
             _mockDb.Setup(db => db.StringGetAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>())).ThrowsAsync(ex);
@@ -157,7 +157,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Redis
 
         [Theory]
         [MemberData(nameof(ExceptionTestData))]
-        public async Task GetActiveSessionIdAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode, bool isRetryable)
+        public async Task GetActiveSessionIdAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode)
         {
             // Arrange
             _mockDb.Setup(db => db.StringGetAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>())).ThrowsAsync(ex);
@@ -174,7 +174,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Redis
 
         [Theory]
         [MemberData(nameof(ExceptionTestData))]
-        public async Task DeleteSessionAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode, bool isRetryable)
+        public async Task DeleteSessionAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode)
         {
             // Arrange
             _mockDb.Setup(db => db.KeyDeleteAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>())).ThrowsAsync(ex);
@@ -191,7 +191,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Redis
 
         [Theory]
         [MemberData(nameof(ExceptionTestData))]
-        public async Task SaveSessionAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode, bool isRetryable)
+        public async Task SaveSessionAsync_LogsError_WhenExceptionOccurs(Exception ex, string expectedCode)
         {
             // Arrange
             _mockDb.Setup(db => db.CreateTransaction(null)).Throws(ex);
@@ -233,12 +233,12 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Redis
         public static IEnumerable<object[]> ExceptionTestData =>
             new List<object[]>
             {
-                new object[] { new RedisException("timeout"), "REDIS_ERROR", false },
-                new object[] { new RedisConnectionException(ConnectionFailureType.SocketFailure, "conn fail"), "REDIS_CONNECTION", true },
-                new object[] { new RedisServerException("server error"), "REDIS_SERVER_ERROR", false },
-                new object[] { new OperationCanceledException(), "CANCELLED", false },
-                new object[] { new JsonException("json error"), "JSON_ERROR", false },
-                new object[] { new OperationCanceledException(), "CANCELLED", false }
+                new object[] { new RedisException("timeout"), "REDIS_ERROR"},
+                new object[] { new RedisConnectionException(ConnectionFailureType.SocketFailure, "conn fail"), "REDIS_CONNECTION"},
+                new object[] { new RedisServerException("server error"), "REDIS_SERVER_ERROR"},
+                new object[] { new OperationCanceledException(), "CANCELLED"},
+                new object[] { new JsonException("json error"), "JSON_ERROR"},
+                new object[] { new OperationCanceledException(), "CANCELLED"}
             };
 
         private ChatSession CreateSession() => new ChatSession

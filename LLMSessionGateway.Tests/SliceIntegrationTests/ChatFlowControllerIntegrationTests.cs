@@ -8,6 +8,7 @@ using LLMSessionGateway.Tests.SliceIntegrationTests.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -37,6 +38,11 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
 
             var client = _factory.WithWebHostBuilder(builder =>
             {
+                builder.ConfigureAppConfiguration((ctx, cfg) =>
+                {
+                    cfg.AddInMemoryCollection(CreateInMemoryConfigurations());
+                });
+
                 builder.ConfigureTestServices(services =>
                 {
                     services.RemoveAll<IChatSessionOrchestrator>();
@@ -99,6 +105,34 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
             return mock;
+        }
+
+        private static Dictionary<string, string?> CreateInMemoryConfigurations()
+        {
+            return new Dictionary<string, string?>
+            {
+                ["Redis:ConnectionString"] = "localhost:6379",
+                ["Redis:LockTtlSeconds"] = "30",
+                ["Redis:ActiveSessionTtlSeconds"] = "3600",
+
+                ["AzureBlob:ConnectionString"] = "UseDevelopmentStorage=true",
+                ["AzureBlob:ContainerName"] = "test",
+
+                ["Grpc:ChatService:Host"] = "localhost",
+                ["Grpc:ChatService:Port"] = "5005",
+
+                ["Grpc:Timeouts:OpenSession"] = "00:00:05",
+                ["Grpc:Timeouts:SendMessage"] = "00:00:10",
+                ["Grpc:Timeouts:StreamReplySetup"] = "00:00:10",
+                ["Grpc:Timeouts:CloseSession"] = "00:00:05",
+
+                ["Logging:File:BasePath"] = "Logs",
+                ["Logging:File:FileNamePattern"] = "log-.txt",
+                ["Logging:File:RollingInterval"] = "Day",
+
+                ["OpenTelemetry:Jaeger:AgentHost"] = "localhost",
+                ["OpenTelemetry:Jaeger:AgentPort"] = "6831",
+            };
         }
     }
 }

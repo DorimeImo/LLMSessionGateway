@@ -92,7 +92,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Blob
 
             // Assert
             Assert.True(result.IsSuccess);
-            Assert.Equal(session.SessionId, result.Value.SessionId);
+            Assert.Equal(session.SessionId, result.Value!.SessionId);
             Assert.Equal(session.UserId, result.Value.UserId);
         }
 

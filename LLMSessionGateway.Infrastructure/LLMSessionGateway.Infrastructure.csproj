@@ -42,8 +42,4 @@
     <Protobuf Include="Grpc/ChatService.proto" GrpcServices="Client" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ApiLimits\" />
-  </ItemGroup>
-
 </Project>

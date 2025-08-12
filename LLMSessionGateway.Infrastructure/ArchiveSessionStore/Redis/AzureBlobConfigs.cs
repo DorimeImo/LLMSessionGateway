@@ -1,8 +1,10 @@
-﻿namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis
 {
     public class AzureBlobConfigs
     {
-        public string ContainerName { get; set; } = default!;
-        public string ConnectionString { get; set; } = default!;
+        [Required] public string ContainerName { get; set; } = default!;
+        [Required] public string ConnectionString { get; set; } = default!;
     }
 }
