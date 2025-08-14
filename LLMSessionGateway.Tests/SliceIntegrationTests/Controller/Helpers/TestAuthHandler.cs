@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller.Helpers
 {
     public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
@@ -27,7 +27,8 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
             var claims = new[]
             {
             new Claim("sub", "test-user-id"),
-            new Claim(ClaimTypes.Name, "TestUser")
+            new Claim(ClaimTypes.Name, "TestUser"),
+            new Claim("scope", "chat.read chat.send")
         };
             var identity = new ClaimsIdentity(claims, "Test");
             var principal = new ClaimsPrincipal(identity);

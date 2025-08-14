@@ -1,6 +1,7 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using LLMSessionGateway.API.Auth;
 using LLMSessionGateway.API.Controllers;
 using LLMSessionGateway.API.Hosting;
 using LLMSessionGateway.API.Validation;
@@ -18,9 +19,8 @@ namespace LLMSessionGateway.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //Auth
-            builder.Services.AddAuthentication();
-            builder.Services.AddAuthorization();
+            // Auth
+            builder.Services.AddApiAuthenticationAndAuthorization(builder.Configuration);
 
             //Infrastructure registration
             builder.Services
@@ -76,8 +76,13 @@ namespace LLMSessionGateway.API
 
             var app = builder.Build();
 
+            app.UseRouting();
+
+            //Auth
+            app.UseApiAuth();
+
             //Middleware
-            app.UseGlobalExceptionHandlerMiddlewareExtension();
+            app.UseGlobalExceptionHandling();
 
             app.MapControllers();
 

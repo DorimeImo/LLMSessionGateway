@@ -1,10 +1,9 @@
-﻿
-using LLMSessionGateway.API;
+﻿using LLMSessionGateway.API;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
-using LLMSessionGateway.Tests.SliceIntegrationTests.Helpers;
+using LLMSessionGateway.Tests.SliceIntegrationTests.Controller.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -16,7 +15,7 @@ using Observability.Shared.Contracts;
 using System.Text;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.SliceIntegrationTests
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
 {
     public class ChatFlowControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {

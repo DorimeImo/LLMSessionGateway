@@ -1,4 +1,5 @@
-﻿using LLMSessionGateway.API.DTOs;
+﻿using LLMSessionGateway.API.Auth.Authorization;
+using LLMSessionGateway.API.DTOs;
 using LLMSessionGateway.API.ErrorHandling;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core.Utilities.Functional;
@@ -27,6 +28,7 @@ namespace LLMSessionGateway.API.Controllers
             _tracingService = tracingService;
         }
 
+        [Authorize(Policy = Scopes.ChatSend)]
         [HttpPost("start")]
         public async Task<IActionResult> StartSession(CancellationToken cancellationToken)
         {
@@ -36,9 +38,6 @@ namespace LLMSessionGateway.API.Controllers
             using (_tracingService.StartActivity(tracingOperationName))
             {
                 var userId = GetUserIdOrThrow();
-
-                //TODO: needs to be refactored. Not clean
-                _logger.Current.UserId = userId;
 
                 var result = await _sessionManager.StartSessionAsync(userId, cancellationToken);
 
@@ -57,6 +56,7 @@ namespace LLMSessionGateway.API.Controllers
             }
         }
 
+        [Authorize(Policy = Scopes.ChatSend)]
         [HttpPost("send")]
         public async Task<IActionResult> SendMessage([FromQuery] string sessionId, [FromBody] SendMessageRequest request, CancellationToken cancellationToken)
         {
@@ -74,6 +74,7 @@ namespace LLMSessionGateway.API.Controllers
             }  
         }
 
+        [Authorize(Policy = Scopes.ChatRead)]
         [HttpGet("stream")]
         public async Task StreamReply([FromQuery] string sessionId, CancellationToken cancellationToken)
         {
@@ -94,6 +95,7 @@ namespace LLMSessionGateway.API.Controllers
             }  
         }
 
+        [Authorize(Policy = Scopes.ChatSend)]
         [HttpPost("end")]
         public async Task<IActionResult> EndSession([FromQuery] string sessionId)
         {

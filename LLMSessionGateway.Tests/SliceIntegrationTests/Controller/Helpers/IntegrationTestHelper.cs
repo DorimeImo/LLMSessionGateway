@@ -1,5 +1,4 @@
-﻿
-using LLMSessionGateway.Application.Contracts.Ports;
+﻿using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
@@ -13,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller.Helpers
 {
     public static class IntegrationTestHelpers
     {
@@ -85,7 +84,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Helpers
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
             mock.Setup(m => m.StreamAssistantReplyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(IntegrationTestHelpers.FakeStream());
+                .Returns(FakeStream());
 
             mock.Setup(m => m.CloseConnectionAsync(It.IsAny<string>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));

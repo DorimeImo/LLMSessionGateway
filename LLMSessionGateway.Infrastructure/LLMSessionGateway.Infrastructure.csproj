@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
-    <PackageReference Include="DorimeImo.Observability.Shared" Version="1.2.1" />
+    <PackageReference Include="DorimeImo.Observability.Shared" Version="2.2.1" />
     <PackageReference Include="FluentAssertions" Version="8.4.0" />
     <PackageReference Include="Google.Protobuf" Version="3.31.1" />
     <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />

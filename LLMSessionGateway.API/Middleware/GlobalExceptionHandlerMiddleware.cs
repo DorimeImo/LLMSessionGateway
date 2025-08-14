@@ -36,18 +36,29 @@ namespace LLMSessionGateway.API.Middleware
 
             logger.LogCritical(source, operation, "Unhandled exception.", exception);
 
+            if (context.Response.HasStarted)
+            {
+                logger.LogError(source, operation, "Unhandled exception after response started.", exception);
+                return;
+            }
+
+            var status = context.Response.StatusCode >= 400
+                ? context.Response.StatusCode
+                : (int)HttpStatusCode.InternalServerError;
+
             var errorResponse = new ErrorResponse
             {
                 UserFriendlyMessage = "An unexpected error occurred. Please try again later.",
-                ErrorMessage = exception.Message,
+                ErrorMessage = "Internal error",
                 ErrorCode = errorCode,
                 IsRetryable = false,
                 CorrelationId = logger.Current.TraceId,
                 Timestamp = DateTime.UtcNow
             };
 
+            context.Response.Clear();
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            context.Response.StatusCode = status;
 
             try
             {
