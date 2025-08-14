@@ -11,30 +11,23 @@ using System.Threading.Tasks;
 
 namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller.Helpers
 {
-    public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        public TestAuthHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            ISystemClock clock)
-            : base(options, logger, encoder, clock)
-        {
-        }
+        public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
+                               ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
+            : base(options, logger, encoder, clock) { }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var claims = new[]
             {
-            new Claim("sub", "test-user-id"),
-            new Claim(ClaimTypes.Name, "TestUser"),
-            new Claim("scope", "chat.read chat.send")
+            new Claim("sub", "user-123"),
+            new Claim("iss", "https://test-issuer"),
+            new Claim("scope", "chat.send chat.read")
         };
-            var identity = new ClaimsIdentity(claims, "Test");
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, "Test");
-
-            return Task.FromResult(AuthenticateResult.Success(ticket));
+            var id = new ClaimsIdentity(claims, Scheme.Name);
+            var principal = new ClaimsPrincipal(id);
+            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name)));
         }
     }
 }

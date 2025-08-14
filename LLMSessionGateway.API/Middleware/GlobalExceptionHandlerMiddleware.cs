@@ -34,7 +34,7 @@ namespace LLMSessionGateway.API.Middleware
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var errorCode = "UNHANDLED_ERROR";
 
-            logger.LogCritical(source, operation, "Unhandled exception.", exception);
+            logger.LogCritical(source, operation, "Unhandled exception: " + exception.Message, exception);
 
             if (context.Response.HasStarted)
             {

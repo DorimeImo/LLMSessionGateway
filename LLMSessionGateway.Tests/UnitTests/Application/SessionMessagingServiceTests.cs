@@ -102,6 +102,45 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
             result.Should().BeSameAs(stream);
         }
 
+        [Fact]
+        public async Task OpenConnectionAsync_ShouldReturnSuccess_WhenBackendSucceeds()
+        {
+            // Arrange
+            var sessionId = "s1";
+            var userId = "u1";
+
+            _chatBackendMock
+                .Setup(b => b.OpenConnectionAsync(sessionId, userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Result<Unit>.Success(Unit.Value));
+
+            // Act
+            var result = await _service.OpenConnectionAsync(sessionId, userId);
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            _chatBackendMock.Verify(b => b.OpenConnectionAsync(sessionId, userId, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task OpenConnectionAsync_ShouldReturnFailure_WhenBackendFails()
+        {
+            // Arrange
+            var sessionId = "s1";
+            var userId = "u1";
+
+            _chatBackendMock
+                .Setup(b => b.OpenConnectionAsync(sessionId, userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Result<Unit>.Failure("backend open failed", errorCode: "OPEN_ERR"));
+
+            // Act
+            var result = await _service.OpenConnectionAsync(sessionId, userId);
+
+            // Assert
+            result.IsFailure.Should().BeTrue();
+            result.Error.Should().Be("backend open failed");
+            result.ErrorCode.Should().Be("OPEN_ERR");
+        }
+
         private async IAsyncEnumerable<string> GetAsyncStream()
         {
             yield return "message 1";

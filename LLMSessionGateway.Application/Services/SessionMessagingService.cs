@@ -27,6 +27,20 @@ namespace LLMSessionGateway.Application.Services
             _logger = logger;
         }
 
+        public async Task<Result<Unit>> OpenConnectionAsync(string sessionId, string userId, CancellationToken ct = default)
+        {
+            var (source, operation) = CallerInfo.GetCallerClassAndMethod();
+            var tracingName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
+
+            using (_tracingService.StartActivity(tracingName))
+            {
+                return await _retryRunner.ExecuteAsyncWithRetryAndFinalyze<Unit>(
+                    ct => _chatBackend.OpenConnectionAsync(sessionId, userId, ct),
+                    ct,
+                    onRetry: RetryLogger.LogRetry<Unit>(_logger, tracingName));
+            }
+        }
+
         public async Task<Result<Unit>> SendMessageAsync(SendMessageCommand command, CancellationToken ct = default)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();

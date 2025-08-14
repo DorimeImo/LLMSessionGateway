@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace LLMSessionGateway.API.Auth
 {
@@ -53,8 +55,17 @@ namespace LLMSessionGateway.API.Auth
                     {
                         OnTokenValidated = ctx =>
                         {
-                            if (jwt.RequireSub && ctx.Principal?.FindFirst(jwt.ClaimNames.Sub) is null)
+                            var id = (ClaimsIdentity)ctx.Principal!.Identity!;
+
+                            if (id.FindFirst("sub") is null)
                                 ctx.Fail("Missing 'sub' claim.");
+
+                            if (!id.HasClaim(c => c.Type == "iss"))
+                            {
+                                var jwtToken = (JwtSecurityToken)ctx.SecurityToken;
+                                id.AddClaim(new Claim("iss", jwtToken.Issuer));
+                            }
+
                             return Task.CompletedTask;
                         },
 
