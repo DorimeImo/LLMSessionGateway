@@ -80,10 +80,10 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller.Helpers
             mock.Setup(m => m.OpenConnectionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
-            mock.Setup(m => m.SendUserMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mock.Setup(m => m.SendUserMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
-            mock.Setup(m => m.StreamAssistantReplyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mock.Setup(m => m.StreamAssistantReplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(FakeStream());
 
             mock.Setup(m => m.CloseConnectionAsync(It.IsAny<string>()))

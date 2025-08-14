@@ -35,15 +35,15 @@ namespace LLMSessionGateway.Application.Services
             using (_tracingService.StartActivity(tracingName))
             {
                 return await _retryRunner.ExecuteAsyncWithRetryAndFinalyze<Unit>(
-                    ct => _chatBackend.SendUserMessageAsync(command.SessionId, command.Message, ct),
+                    ct => _chatBackend.SendUserMessageAsync(command.SessionId, command.Message, command.MessageId, ct),
                     ct,
                     onRetry: RetryLogger.LogRetry<Unit>(_logger, tracingName));
             }
         }
 
-        public IAsyncEnumerable<string> StreamReplyAsync(string sessionId, CancellationToken ct = default)
+        public IAsyncEnumerable<string> StreamReplyAsync(string sessionId, string messageId, CancellationToken ct = default)
         {
-            return _chatBackend.StreamAssistantReplyAsync(sessionId, ct);
+            return _chatBackend.StreamAssistantReplyAsync(sessionId, messageId, ct);
         }
     }
 }

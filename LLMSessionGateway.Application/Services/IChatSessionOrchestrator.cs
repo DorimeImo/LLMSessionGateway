@@ -13,7 +13,7 @@ namespace LLMSessionGateway.Application.Services
     {
         Task<Result<ChatSession>> StartSessionAsync(string userId, CancellationToken ct = default);
         Task<Result<Unit>> SendMessageAsync(string sessionId, string message, string messageId, CancellationToken ct = default);
-        IAsyncEnumerable<string> StreamReplyAsync(string sessionId, CancellationToken cancellationToken); // keep as-is, or wrap each token in a `Result<string>` if needed
+        IAsyncEnumerable<string> StreamReplyAsync(string sessionId, string parentMessageId, CancellationToken cancellationToken); // keep as-is, or wrap each token in a `Result<string>` if needed
         Task<Result<Unit>> EndSessionAsync(string sessionId);
     }
 }

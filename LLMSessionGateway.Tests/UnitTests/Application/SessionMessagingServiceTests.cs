@@ -43,7 +43,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
             var command = CreateCommand();
 
             _chatBackendMock
-                .Setup(b => b.SendUserMessageAsync(command.SessionId, command.Message, It.IsAny<CancellationToken>()))
+                .Setup(b => b.SendUserMessageAsync(command.SessionId, command.Message, command.MessageId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
             // Act
@@ -51,7 +51,13 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
 
             // Assert
             result.IsSuccess.Should().BeTrue();
-            _chatBackendMock.Verify(b => b.SendUserMessageAsync(command.SessionId, command.Message, It.IsAny<CancellationToken>()), Times.Once);
+            _chatBackendMock.Verify(b => b.SendUserMessageAsync(
+                command.SessionId, 
+                command.Message, 
+                command.MessageId, 
+                It.IsAny<CancellationToken>()), 
+                Times.Once
+                );
         }
 
         [Fact]
@@ -61,7 +67,12 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
             var command = CreateCommand();
 
             _chatBackendMock
-                .Setup(b => b.SendUserMessageAsync(command.SessionId, command.Message, It.IsAny<CancellationToken>()))
+                .Setup(b => b.SendUserMessageAsync(
+                    command.SessionId, 
+                    command.Message, 
+                    command.MessageId, 
+                    It.IsAny<CancellationToken>())
+                )
                 .ReturnsAsync(Result<Unit>.Failure("backend error"));
 
             // Act
@@ -77,14 +88,15 @@ namespace LLMSessionGateway.Tests.UnitTests.Application
         {
             // Arrange
             var sessionId = "s1";
+            var parentMessageId = "pm1";
             var stream = GetAsyncStream();
 
             _chatBackendMock
-                .Setup(b => b.StreamAssistantReplyAsync(sessionId, It.IsAny<CancellationToken>()))
+                .Setup(b => b.StreamAssistantReplyAsync(sessionId, parentMessageId, It.IsAny<CancellationToken>()))
                 .Returns(stream);
 
             // Act
-            var result = _service.StreamReplyAsync(sessionId);
+            var result = _service.StreamReplyAsync(sessionId, parentMessageId);
 
             // Assert
             result.Should().BeSameAs(stream);

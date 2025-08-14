@@ -11,6 +11,6 @@ namespace LLMSessionGateway.Application.Services
     public interface ISessionMessagingService
     {
         Task<Result<Unit>> SendMessageAsync(SendMessageCommand command, CancellationToken ct = default);
-        IAsyncEnumerable<string> StreamReplyAsync(string sessionId, CancellationToken ct = default);
+        IAsyncEnumerable<string> StreamReplyAsync(string sessionId, string messageId, CancellationToken ct = default);
     }
 }

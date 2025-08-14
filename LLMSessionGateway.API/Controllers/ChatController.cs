@@ -76,7 +76,7 @@ namespace LLMSessionGateway.API.Controllers
 
         [Authorize(Policy = Scopes.ChatRead)]
         [HttpGet("stream")]
-        public async Task StreamReply([FromQuery] string sessionId, CancellationToken cancellationToken)
+        public async Task StreamReply([FromQuery] string sessionId, [FromQuery] StreamReplyRequest request, CancellationToken cancellationToken)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
@@ -85,7 +85,7 @@ namespace LLMSessionGateway.API.Controllers
             {
                 Response.Headers.Append("Content-Type", "text/event-stream");
 
-                await foreach (var chunk in _sessionManager.StreamReplyAsync(sessionId, cancellationToken))
+                await foreach (var chunk in _sessionManager.StreamReplyAsync(sessionId, request.ParentMessageId!, cancellationToken))
                 {
                     await Response.WriteAsync($"data: {chunk}\n\n");
                     await Response.Body.FlushAsync();

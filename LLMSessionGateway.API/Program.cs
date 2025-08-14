@@ -69,6 +69,7 @@ namespace LLMSessionGateway.API
             //API Request Validation
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddValidatorsFromAssemblyContaining<SendMessageRequestValidator>();
+            builder.Services.AddValidatorsFromAssemblyContaining<StreamReplyRequestValidator>();
 
             //API Request Limits
             builder.Services

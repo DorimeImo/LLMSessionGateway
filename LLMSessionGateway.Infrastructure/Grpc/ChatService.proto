@@ -20,10 +20,12 @@ message OpenSessionRequest {
 message UserMessageRequest {
   string session_id = 1;
   string message = 2;
+  string message_id = 3;
 }
 
 message StreamReplyRequest {
   string session_id = 1;
+  string message_id = 2;
 }
 
 message AssistantReplyToken {

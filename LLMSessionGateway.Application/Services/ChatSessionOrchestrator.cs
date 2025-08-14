@@ -22,6 +22,7 @@ namespace LLMSessionGateway.Application.Services
 
         public async Task<Result<ChatSession>> StartSessionAsync(string userId, CancellationToken ct = default)
         {
+            //TODO: OpenSession on messaging
             return await _lifecycle.StartSessionAsync(userId, ct);
         }
 
@@ -35,9 +36,10 @@ namespace LLMSessionGateway.Application.Services
             return await _messaging.SendMessageAsync(sendMessageCommand, ct);
         }
 
-        public IAsyncEnumerable<string> StreamReplyAsync(string sessionId, CancellationToken cancellationToken)
+        public IAsyncEnumerable<string> StreamReplyAsync(string sessionId, string parentMessageId, CancellationToken cancellationToken)
         {
-            return _messaging.StreamReplyAsync(sessionId, cancellationToken);
+            //TODO: _updater.AddMessageAsync for the successfully received message
+            return _messaging.StreamReplyAsync(sessionId, parentMessageId, cancellationToken);
         }
 
         public async Task<Result<Unit>> EndSessionAsync(string sessionId)

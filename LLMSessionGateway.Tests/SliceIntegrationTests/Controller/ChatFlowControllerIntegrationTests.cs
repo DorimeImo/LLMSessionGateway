@@ -71,7 +71,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
                 Encoding.UTF8,
                 "application/json");
             var sendResponse = await client.PostAsync("/api/v1/chat/send?sessionId=abc", sendContent);
-            var streamResponse = await client.GetAsync("/api/v1/chat/stream?sessionId=abc");
+            var streamResponse = await client.GetAsync("/api/v1/chat/stream?sessionId=abc&parentMessageId=m1");
             var endResponse = await client.PostAsync("/api/v1/chat/end?sessionId=abc", null);
 
             // Assert
@@ -82,7 +82,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
 
             sessionManagerMock.Verify(m => m.StartSessionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
             sessionManagerMock.Verify(m => m.SendMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-            sessionManagerMock.Verify(m => m.StreamReplyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            sessionManagerMock.Verify(m => m.StreamReplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
             sessionManagerMock.Verify(m => m.EndSessionAsync(It.IsAny<string>()), Times.Once);
         }
 
@@ -97,7 +97,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
             mock.Setup(m => m.SendMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
-            mock.Setup(m => m.StreamReplyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mock.Setup(m => m.StreamReplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(IntegrationTestHelpers.FakeStream());
 
             mock.Setup(m => m.EndSessionAsync(It.IsAny<string>()))

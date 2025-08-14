@@ -54,7 +54,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
             }
         }
 
-        public async Task<Result<Unit>> SendUserMessageAsync(string sessionId, string message, CancellationToken ct)
+        public async Task<Result<Unit>> SendUserMessageAsync(string sessionId, string message, string messageId, CancellationToken ct)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
@@ -69,7 +69,8 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                     await _grpcClient.SendMessageAsync(new UserMessageRequest
                     {
                         SessionId = sessionId,
-                        Message = message
+                        Message = message,
+                        MessageId = messageId
                     }, deadline: deadline, cancellationToken: ct);
 
                     return Result<Unit>.Success(Unit.Value);
@@ -81,7 +82,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
             }    
         }
 
-        public async IAsyncEnumerable<string> StreamAssistantReplyAsync(string sessionId, [EnumeratorCancellation] CancellationToken ct)
+        public async IAsyncEnumerable<string> StreamAssistantReplyAsync(string sessionId, string parentMessageId, [EnumeratorCancellation] CancellationToken ct)
         {
             var (source, operation) = CallerInfo.GetCallerClassAndMethod();
             var tracingOperationName = TracingOperationNameBuilder.TracingOperationNameBuild((source, operation));
@@ -95,7 +96,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                     ct.ThrowIfCancellationRequested();
                     var setupDeadline = DateTime.UtcNow.Add(_timeouts.StreamReplySetup);
 
-                    call = _grpcClient.StreamReply(new StreamReplyRequest { SessionId = sessionId }, 
+                    call = _grpcClient.StreamReply(new StreamReplyRequest { SessionId = sessionId, MessageId = parentMessageId }, 
                                                     deadline: setupDeadline, cancellationToken: ct);
                 }
                 catch (Exception ex)

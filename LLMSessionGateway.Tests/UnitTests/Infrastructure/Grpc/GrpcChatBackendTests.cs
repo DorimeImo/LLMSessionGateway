@@ -64,6 +64,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
             // Arrange
             var sessionId = "s";
             var message = "msg";
+            var messageId = "pm1";
             var ct = CancellationToken.None;
 
             _grpcClientMock
@@ -75,13 +76,17 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
                 .Returns(CreateAsyncUnaryCall(new Empty()));
 
             // Act
-            var result = await _chatBackend.SendUserMessageAsync(sessionId, message, ct);
+            var result = await _chatBackend.SendUserMessageAsync(sessionId, message, messageId, ct);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
 
             _grpcClientMock.Verify(c => c.SendMessageAsync(
-                It.Is<UserMessageRequest>(r => r.SessionId == sessionId && r.Message == message),
+                It.Is<UserMessageRequest>(
+                    r => r.SessionId == sessionId 
+                    && r.Message == message 
+                    && r.MessageId == messageId
+                    ),
                 It.IsAny<Metadata>(),
                 It.Is<DateTime?>(d => d.HasValue),
                 ct), Times.Once);
@@ -126,7 +131,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
 
             // Act
             var results = new List<string>();
-            await foreach (var token in _chatBackend.StreamAssistantReplyAsync("s", default))
+            await foreach (var token in _chatBackend.StreamAssistantReplyAsync("s", "pm1", default))
             {
                 results.Add(token);
             }
@@ -246,7 +251,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
 
             // Act
             var results = new List<string>();
-            var enumerator = _chatBackend.StreamAssistantReplyAsync("s", default).GetAsyncEnumerator();
+            var enumerator = _chatBackend.StreamAssistantReplyAsync("s", "pm1", default).GetAsyncEnumerator();
 
             try
             {
