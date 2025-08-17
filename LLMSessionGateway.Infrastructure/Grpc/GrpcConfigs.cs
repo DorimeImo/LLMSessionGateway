@@ -9,14 +9,22 @@ namespace LLMSessionGateway.Infrastructure.Grpc
 {
     public sealed class GrpcConfigs
     {
-        [Required] public string Host { get; set; } = default!;
-        [Required] public int Port { get; set; }
+        public string Host { get; init; } = "chat-backend.internal.azurecontainerapps.io";
+        public int Port { get; init; } = 443;
+        public bool UseTls { get; init; } = true;
+        public bool EnableMtls { get; init; } = false;
+        public string? ClientCertificateBase64Env { get; init; }
+        public string? ClientCertificatePasswordEnv { get; init; }
     }
-    public sealed class GrpcTimeoutsOptions
+
+    public sealed class GrpcTimeoutsConfigs
     {
-        [Required] public TimeSpan OpenSession { get; set; } = TimeSpan.FromSeconds(5);
-        [Required] public TimeSpan SendMessage { get; set; } = TimeSpan.FromSeconds(10);
-        [Required] public TimeSpan StreamReplySetup { get; set; } = TimeSpan.FromSeconds(10);
-        [Required] public TimeSpan CloseSession { get; set; } = TimeSpan.FromSeconds(5);
+        public int OpenSeconds { get; init; } = 10;
+        public int SendSeconds { get; init; } = 20;
+        public int StreamSetupSeconds { get; init; } = 10;
+        public int CloseSeconds { get; init; } = 8;
+
+        public int MaxSendBytes { get; init; } = 4 * 1024 * 1024;
+        public int MaxReceiveBytes { get; init; } = 32 * 1024 * 1024;
     }
 }

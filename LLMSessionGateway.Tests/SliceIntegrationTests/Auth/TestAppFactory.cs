@@ -49,13 +49,22 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
                     ["AzureBlob:ConnectionString"] = "UseDevelopmentStorage=true",
                     ["AzureBlob:ContainerName"] = "test",
 
-                    // gRPC backend options (even if you stub the service, validators may bind these)
+                    // gRPC backend options (new schema)
                     ["Grpc:ChatService:Host"] = "localhost",
                     ["Grpc:ChatService:Port"] = "5005",
-                    ["Grpc:Timeouts:OpenSession"] = "00:00:05",
-                    ["Grpc:Timeouts:SendMessage"] = "00:00:10",
-                    ["Grpc:Timeouts:StreamReplySetup"] = "00:00:10",
-                    ["Grpc:Timeouts:CloseSession"] = "00:00:05",
+                    ["Grpc:ChatService:UseTls"] = "true",
+                    ["Grpc:ChatService:EnableMtls"] = "false",
+                    // If you enable mTLS, also set these and provide real env vars:
+                    // ["Grpc:ChatService:ClientCertificateBase64Env"] = "PFX_B64",
+                    // ["Grpc:ChatService:ClientCertificatePasswordEnv"] = "PFX_PWD",
+
+                    // gRPC per-call timeouts/sizes (seconds + bytes)
+                    ["Grpc:Timeouts:OpenSeconds"] = "5",
+                    ["Grpc:Timeouts:SendSeconds"] = "10",
+                    ["Grpc:Timeouts:StreamSetupSeconds"] = "10",
+                    ["Grpc:Timeouts:CloseSeconds"] = "5",
+                    ["Grpc:Timeouts:MaxSendBytes"] = "4194304",
+                    ["Grpc:Timeouts:MaxReceiveBytes"] = "33554432",
 
                     // Logging (if your Serilog options are validated)
                     ["Logging:File:BasePath"] = "Logs",

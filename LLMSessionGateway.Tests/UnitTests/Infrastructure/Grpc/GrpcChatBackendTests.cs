@@ -42,7 +42,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
                 .Setup(c => c.OpenSessionAsync(
                     It.IsAny<OpenSessionRequest>(),
                     It.IsAny<Metadata>(),
-                    It.IsAny<DateTime?>(),         
+                    It.IsAny<DateTime?>(),
                     It.IsAny<CancellationToken>()))
                 .Returns(CreateAsyncUnaryCall(new Empty()));
 
@@ -51,9 +51,12 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
 
             // Assert
             result.IsSuccess.Should().BeTrue();
+
             _grpcClientMock.Verify(c => c.OpenSessionAsync(
                 It.Is<OpenSessionRequest>(r => r.SessionId == sessionId && r.UserId == userId),
-                It.IsAny<Metadata>(),
+                It.Is<Metadata>(m =>
+                    m.Any(e => e.Key == "x-session-id" && e.Value == sessionId) &&
+                    m.Any(e => e.Key == "x-user-id" && e.Value == userId)),
                 It.Is<DateTime?>(d => d.HasValue),
                 ct), Times.Once);
         }
@@ -71,7 +74,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
                 .Setup(c => c.SendMessageAsync(
                     It.IsAny<UserMessageRequest>(),
                     It.IsAny<Metadata>(),
-                    It.IsAny<DateTime?>(),           
+                    It.IsAny<DateTime?>(),
                     It.IsAny<CancellationToken>()))
                 .Returns(CreateAsyncUnaryCall(new Empty()));
 
@@ -82,12 +85,13 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
             result.IsSuccess.Should().BeTrue();
 
             _grpcClientMock.Verify(c => c.SendMessageAsync(
-                It.Is<UserMessageRequest>(
-                    r => r.SessionId == sessionId 
-                    && r.Message == message 
-                    && r.MessageId == messageId
-                    ),
-                It.IsAny<Metadata>(),
+                It.Is<UserMessageRequest>(r =>
+                    r.SessionId == sessionId &&
+                    r.Message == message &&
+                    r.MessageId == messageId),
+                It.Is<Metadata>(m =>
+                    m.Any(e => e.Key == "x-session-id" && e.Value == sessionId) &&
+                    m.Any(e => e.Key == "x-message-id" && e.Value == messageId)),
                 It.Is<DateTime?>(d => d.HasValue),
                 ct), Times.Once);
         }
@@ -110,8 +114,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
                 .Returns(() => new AssistantReplyToken { Token = tokens.Peek() })
                 .Callback(() =>
                 {
-                    if (tokens.Count > 0)
-                        tokens.Dequeue();
+                    if (tokens.Count > 0) tokens.Dequeue();
                 });
 
             var callMock = new AsyncServerStreamingCall<AssistantReplyToken>(
@@ -125,7 +128,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
                 .Setup(c => c.StreamReply(
                     It.IsAny<StreamReplyRequest>(),
                     It.IsAny<Metadata>(),
-                    It.IsAny<DateTime?>(),           
+                    It.IsAny<DateTime?>(),
                     It.IsAny<CancellationToken>()))
                 .Returns(callMock);
 
@@ -138,6 +141,15 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
 
             // Assert
             results.Should().ContainInOrder("Hello", "world");
+
+            // Optional: verify headers sent on stream setup
+            _grpcClientMock.Verify(c => c.StreamReply(
+                It.Is<StreamReplyRequest>(r => r.SessionId == "s" && r.MessageId == "pm1"),
+                It.Is<Metadata>(m =>
+                    m.Any(e => e.Key == "x-session-id" && e.Value == "s") &&
+                    m.Any(e => e.Key == "x-message-id" && e.Value == "pm1")),
+                It.Is<DateTime?>(d => d.HasValue),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -148,7 +160,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
                 .Setup(c => c.CloseSessionAsync(
                     It.IsAny<CloseSessionRequest>(),
                     It.IsAny<Metadata>(),
-                    It.IsAny<DateTime?>(),             
+                    It.IsAny<DateTime?>(),
                     It.IsAny<CancellationToken>()))
                 .Returns(CreateAsyncUnaryCall(new Empty()));
 
@@ -188,7 +200,6 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
             // Assert
             result.IsFailure.Should().BeTrue();
             result.ErrorCode.Should().Be("GRPC_ERROR");
-
             _loggerMock.VerifyAnyLogging(rpcException);
         }
 
@@ -212,12 +223,11 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
             // Assert
             result.IsFailure.Should().BeTrue();
             result.ErrorCode.Should().Be("GRPC_ERROR");
-
             _loggerMock.VerifyAnyLogging(rpcException);
         }
 
         [Fact]
-        public async Task StreamAssistantReplyAsync_TokensBeforeException_AreReturned_AndNoLoggerCalled()
+        public async Task StreamAssistantReplyAsync_TokensBeforeException_AreReturned_ThenEnumeratorThrows()
         {
             // Arrange
             var responseStreamMock = new Mock<IAsyncStreamReader<AssistantReplyToken>>();
@@ -266,9 +276,9 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
             }
 
             // Assert tokens collected before error
-            results.Should().BeEquivalentTo(new[] { "first", "second" }, options => options.WithStrictOrdering());
+            results.Should().BeEquivalentTo(new[] { "first", "second" }, o => o.WithStrictOrdering());
 
-            // Optionally verify no error was logged for streaming errors
+            // For StatusCode.Internal we rethrow (no warning logged by StreamSafe)
             _loggerMock.VerifyNoOtherCalls();
         }
 
@@ -286,14 +296,15 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Grpc
                 () => { });
         }
 
-        private GrpcTimeoutsOptions CreateTimeoutsOptions()
+        private GrpcTimeoutsConfigs CreateTimeoutsOptions()
         {
-            return new GrpcTimeoutsOptions
+            // New config class: seconds instead of TimeSpan properties
+            return new GrpcTimeoutsConfigs
             {
-                OpenSession = TimeSpan.FromSeconds(5),
-                SendMessage = TimeSpan.FromSeconds(10),
-                StreamReplySetup = TimeSpan.FromSeconds(10),
-                CloseSession = TimeSpan.FromSeconds(5)
+                OpenSeconds = 5,
+                SendSeconds = 10,
+                StreamSetupSeconds = 10,
+                CloseSeconds = 5
             };
         }
     }
