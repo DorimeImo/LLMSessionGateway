@@ -66,10 +66,10 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                     ct.ThrowIfCancellationRequested();
 
                     var headers = new Metadata
-            {
-                { "x-session-id", sessionId },
-                { "x-message-id", messageId }
-            };
+                        {
+                            { "x-session-id", sessionId },
+                            { "x-message-id", messageId }
+                        };
 
                     var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(_timeouts.SendSeconds));
 

@@ -26,7 +26,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
             services.AddGrpcClient<ChatService.ChatServiceClient>((sp, o) =>
             {
                 var cfg = sp.GetRequiredService<IOptions<GrpcConfigs>>().Value;
-                if (!cfg.UseTls)
+                if (!cfg.UseTls) 
                     throw new InvalidOperationException("TLS must be enabled for gRPC in production.");
 
                 o.Address = new Uri($"https://{cfg.Host}:{cfg.Port}");
@@ -37,11 +37,9 @@ namespace LLMSessionGateway.Infrastructure.Grpc
 
                 var handler = new SocketsHttpHandler
                 {
-                    // HTTP/2 + keepalives for gRPC
                     KeepAlivePingDelay = TimeSpan.FromSeconds(30),
                     KeepAlivePingTimeout = TimeSpan.FromSeconds(15),
 
-                    // Refresh pooled connections periodically to ride over DNS/LB changes
                     PooledConnectionLifetime = TimeSpan.FromMinutes(10),
                     PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
 
@@ -56,7 +54,6 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                     }
                 };
 
-                // mTLS (optional)
                 if (cfg.EnableMtls)
                 {
                     var cert = LoadClientCertificateFromEnv(cfg)
@@ -72,53 +69,21 @@ namespace LLMSessionGateway.Infrastructure.Grpc
 
                 ch.MaxSendMessageSize = to.MaxSendBytes;
                 ch.MaxReceiveMessageSize = to.MaxReceiveBytes;
-
-                // Global defaults; we’ll fine-tune per method (see below in your client class)
-                var retry = new RetryPolicy
-                {
-                    MaxAttempts = 4,
-                    InitialBackoff = TimeSpan.FromMilliseconds(200),
-                    MaxBackoff = TimeSpan.FromSeconds(2),
-                    BackoffMultiplier = 2.0,
-                    RetryableStatusCodes = { StatusCode.Unavailable, StatusCode.DeadlineExceeded }
-                };
-
-                ch.ServiceConfig = new ServiceConfig
-                {
-                    MethodConfigs =
-                    {
-                    new MethodConfig
-                    {
-                        Names = { MethodName.Default },
-                        RetryPolicy = retry
-                    }
-                    }
-                    // Load-balancing isn’t needed; ACA ingress load-balances for you.
-                };
             });
 
             services.AddScoped<IChatBackend, GrpcChatBackend>();
             return services;
         }
 
-        private static X509Certificate2? LoadClientCertificateFromEnv(GrpcConfigs cfg)
+        private static X509Certificate2 LoadClientCertificateFromEnv(GrpcConfigs cfg)
         {
-            if (string.IsNullOrWhiteSpace(cfg.ClientCertificateBase64Env))
-                return null;
-
-            var pfxB64 = Environment.GetEnvironmentVariable(cfg.ClientCertificateBase64Env);
-            if (string.IsNullOrWhiteSpace(pfxB64))
-                throw new InvalidOperationException($"Env var '{cfg.ClientCertificateBase64Env}' is empty.");
-
-            var pwd = string.IsNullOrWhiteSpace(cfg.ClientCertificatePasswordEnv)
-                ? null
-                : Environment.GetEnvironmentVariable(cfg.ClientCertificatePasswordEnv);
+            var pfxB64 = Environment.GetEnvironmentVariable(cfg.ClientCertificateBase64Env!)
+                ?? throw new InvalidOperationException($"Env var '{cfg.ClientCertificateBase64Env}' is missing.");
+            var pwd = Environment.GetEnvironmentVariable(cfg.ClientCertificatePasswordEnv!)
+                ?? throw new InvalidOperationException($"Env var '{cfg.ClientCertificatePasswordEnv}' is missing or empty.");
 
             var bytes = Convert.FromBase64String(pfxB64);
-            // If your PFX in KV has a password, pass it; otherwise this can be null or empty.
-            return string.IsNullOrEmpty(pwd)
-                ? new X509Certificate2(bytes)
-                : new X509Certificate2(bytes, pwd);
+            return new X509Certificate2(bytes, pwd, X509KeyStorageFlags.EphemeralKeySet);
         }
     }
 }
