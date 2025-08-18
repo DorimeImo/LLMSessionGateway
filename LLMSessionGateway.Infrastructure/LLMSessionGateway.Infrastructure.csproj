@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.15.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
     <PackageReference Include="DorimeImo.Observability.Shared" Version="2.2.1" />
     <PackageReference Include="FluentAssertions" Version="8.4.0" />

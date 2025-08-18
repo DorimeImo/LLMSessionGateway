@@ -1,6 +1,7 @@
 ﻿using Grpc.Core;
 using Grpc.Net.Client.Configuration;
 using LLMSessionGateway.Application.Contracts.Ports;
+using LLMSessionGateway.Infrastructure.Auth;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -26,10 +27,21 @@ namespace LLMSessionGateway.Infrastructure.Grpc
             services.AddGrpcClient<ChatService.ChatServiceClient>((sp, o) =>
             {
                 var cfg = sp.GetRequiredService<IOptions<GrpcConfigs>>().Value;
-                if (!cfg.UseTls) 
-                    throw new InvalidOperationException("TLS must be enabled for gRPC in production.");
+                var scheme = cfg.UseTls ? "https" : "http";
+                o.Address = new Uri($"{scheme}://{cfg.Host}:{cfg.Port}");
+            })
+            .AddCallCredentials(async (ctx, metadata, sp) =>
+            {
+                var cfg = sp.GetRequiredService<IOptions<GrpcConfigs>>().Value;
+                var tokenProvider = sp.GetRequiredService<ITokenProvider>();
 
-                o.Address = new Uri($"https://{cfg.Host}:{cfg.Port}");
+                var tokenRes = await tokenProvider.GetTokenAsync(cfg.Scope, ctx.CancellationToken)
+                                                  .ConfigureAwait(false);
+
+                if (tokenRes.IsSuccess)
+                {
+                    metadata.Add("Authorization", $"Bearer {tokenRes.Value}");
+                }
             })
             .ConfigurePrimaryHttpMessageHandler(sp =>
             {
@@ -46,13 +58,16 @@ namespace LLMSessionGateway.Infrastructure.Grpc
                     MaxConnectionsPerServer = 32,
                     AutomaticDecompression = DecompressionMethods.None,
                     ConnectTimeout = TimeSpan.FromSeconds(5),
+                };
 
-                    SslOptions = new SslClientAuthenticationOptions
+                if (cfg.UseTls)
+                {
+                    handler.SslOptions = new SslClientAuthenticationOptions
                     {
                         EnabledSslProtocols = SslProtocols.Tls13 | SslProtocols.Tls12,
                         CertificateRevocationCheckMode = X509RevocationMode.Online
-                    }
-                };
+                    };
+                }
 
                 if (cfg.EnableMtls)
                 {

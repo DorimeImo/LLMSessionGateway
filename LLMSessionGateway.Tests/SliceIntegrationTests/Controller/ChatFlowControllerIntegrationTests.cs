@@ -53,8 +53,14 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
                     services.AddScoped(_ => loggerMock.Object);
                     services.AddScoped(_ => tracingMock.Object);
 
-                    services.AddAuthentication("Test")
-                        .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", _ => { });
+                    services.AddAuthentication(options =>
+                    {
+                        options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                        options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                    })
+                    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+
+                    services.AddAuthorization();
 
                     services.PostConfigure<AuthenticationOptions>(options =>
                     {

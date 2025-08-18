@@ -14,104 +14,51 @@ namespace LLMSessionGateway.API.Auth
     public static class AuthServiceCollectionExtensions
     {
         public static IServiceCollection AddApiAuthenticationAndAuthorization(
-            this IServiceCollection services, IConfiguration config)
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
-            services.AddOptions<JwtValidationConfigs>()
-                .Bind(config.GetSection(JwtValidationConfigs.SectionName))
-                .Validate(o => !string.IsNullOrWhiteSpace(o.Authority), "Authority is required")
-                .Validate(o => !string.IsNullOrWhiteSpace(o.Audience), "Audience is required")
-                .Validate(o => o.ClockSkewSeconds >= 0, "ClockSkewSeconds must be >= 0")
-                .Validate(o => o.Authority.StartsWith("https://", StringComparison.OrdinalIgnoreCase),
-                          "Authority must be HTTPS in production")
-                .ValidateOnStart();
+            // Bind JWT options (Authority, Audience, claim names, etc.)
+            var jwtOptions = new JwtValidationConfigs();
+            configuration.GetSection(JwtValidationConfigs.SectionName).Bind(jwtOptions);
 
-            var jwt = config.GetSection(JwtValidationConfigs.SectionName).Get<JwtValidationConfigs>()
-                      ?? throw new InvalidOperationException("Auth:Jwt config missing.");
-
-            services.AddProblemDetails();
+            // Ensure incoming claim names are not remapped
+            JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(o =>
                 {
-                    o.Authority = jwt.Authority.TrimEnd('/');
-                    o.Audience = jwt.Audience;
-                    o.RequireHttpsMetadata = true;
-                    o.MapInboundClaims = false;
-                    o.RefreshOnIssuerKeyNotFound = true;
+                    o.Authority = jwtOptions.Authority;
+                    o.Audience = jwtOptions.Audience;
+                    o.RequireHttpsMetadata = jwtOptions.RequireHttpsMetadata;
 
                     o.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        RequireSignedTokens = true,
-                        RequireExpirationTime = true,
-                        ClockSkew = TimeSpan.FromSeconds(jwt.ClockSkewSeconds),
-                        ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 }
+                        ValidAudience = jwtOptions.Audience,
+                        ClockSkew = TimeSpan.FromSeconds(jwtOptions.ClockSkewSeconds),
+
+                        NameClaimType = jwtOptions.ClaimNames.Sub
                     };
 
                     o.Events = new JwtBearerEvents
                     {
-                        OnTokenValidated = ctx =>
-                        {
-                            var id = (ClaimsIdentity)ctx.Principal!.Identity!;
-
-                            if (id.FindFirst("sub") is null)
-                                ctx.Fail("Missing 'sub' claim.");
-
-                            if (!id.HasClaim(c => c.Type == "iss"))
-                            {
-                                var jwtToken = (JwtSecurityToken)ctx.SecurityToken;
-                                id.AddClaim(new Claim("iss", jwtToken.Issuer));
-                            }
-
-                            return Task.CompletedTask;
-                        },
-
                         OnChallenge = async ctx =>
                         {
                             ctx.HandleResponse();
-
-                            var problems = ctx.HttpContext.RequestServices
-                                .GetRequiredService<IProblemDetailsService>();
-
-                            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                            await problems.WriteAsync(new ProblemDetailsContext
-                            {
-                                HttpContext = ctx.HttpContext,
-                                ProblemDetails = new ProblemDetails
-                                {
-                                    Title = "Unauthorized",
-                                    Status = StatusCodes.Status401Unauthorized,
-                                    Detail = "Missing or invalid access token.",
-                                    Instance = ctx.HttpContext.Request.Path
-                                }.WithExtension("errorCode", "AUTH_401")
-                            });
+                            var pf = ctx.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+                            var pd = pf.CreateProblemDetails(ctx.HttpContext, statusCode: StatusCodes.Status401Unauthorized,
+                                title: "Unauthorized", detail: "A valid bearer token is required.");
+                            await ctx.HttpContext.Response.WriteAsJsonAsync(pd);
                         },
-
                         OnForbidden = async ctx =>
                         {
-                            var problems = ctx.HttpContext.RequestServices
-                                .GetRequiredService<IProblemDetailsService>();
-
-                            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-                            await problems.WriteAsync(new ProblemDetailsContext
-                            {
-                                HttpContext = ctx.HttpContext,
-                                ProblemDetails = new ProblemDetails
-                                {
-                                    Title = "Forbidden",
-                                    Status = StatusCodes.Status403Forbidden,
-                                    Detail = "Insufficient scope for this resource.",
-                                    Instance = ctx.HttpContext.Request.Path
-                                }.WithExtension("errorCode", "AUTH_403")
-                            });
+                            var pf = ctx.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+                            var pd = pf.CreateProblemDetails(ctx.HttpContext, statusCode: StatusCodes.Status403Forbidden,
+                                title: "Forbidden", detail: "You don't have the required scope to access this resource.");
+                            await ctx.HttpContext.Response.WriteAsJsonAsync(pd);
                         }
                     };
                 });
-
-            services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
 
             services.AddAuthorization(options =>
             {
@@ -121,13 +68,9 @@ namespace LLMSessionGateway.API.Auth
                     p => p.Requirements.Add(new ScopeRequirement(Scopes.ChatSend)));
             });
 
-            return services;
-        }
+            services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
 
-        private static T WithExtension<T>(this T pd, string key, object value) where T : ProblemDetails
-        {
-            pd.Extensions[key] = value;
-            return pd;
+            return services;
         }
     }
 }

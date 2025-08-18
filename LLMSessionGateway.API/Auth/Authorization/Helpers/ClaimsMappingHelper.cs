@@ -10,7 +10,7 @@ namespace LLMSessionGateway.API.Auth.Authorization.Helpers
         {
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var scopeClaimName = claimNames.Scope ?? "scope";
+            var scopeClaimName = string.IsNullOrWhiteSpace(claimNames.Scope) ? "scp" : claimNames.Scope;
             var scopeValue = user.FindFirst(scopeClaimName)?.Value;
 
             if (!string.IsNullOrWhiteSpace(scopeValue))

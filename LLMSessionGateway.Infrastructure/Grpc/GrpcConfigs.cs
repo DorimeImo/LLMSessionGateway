@@ -15,6 +15,12 @@ namespace LLMSessionGateway.Infrastructure.Grpc
         public bool EnableMtls { get; init; } = false;
         public string? ClientCertificateBase64Env { get; init; }
         public string? ClientCertificatePasswordEnv { get; init; }
+
+        /// <summary>
+        /// Full OAuth2 scope for the downstream gRPC backend
+        /// (e.g. "api://chat-backend/.default" or "api://chat-backend/send")
+        /// </summary>
+        public string Scope { get; init; } = string.Empty;
     }
 
     public sealed class GrpcTimeoutsConfigs

@@ -1,10 +1,11 @@
-﻿using LLMSessionGateway.Infrastructure.Grpc;
+﻿using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
+using LLMSessionGateway.Infrastructure.Grpc;
 using LLMSessionGateway.Infrastructure.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Serilog;
-using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
-using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
 
 namespace LLMSessionGateway.Infrastructure
 {
@@ -37,12 +38,16 @@ namespace LLMSessionGateway.Infrastructure
                 .ValidateDataAnnotations()
                 .Validate(o => !string.IsNullOrWhiteSpace(o.Host), "Grpc:ChatService:Host is required.")
                 .Validate(o => o.Port is > 0 and <= 65535, "Grpc:ChatService:Port must be 1..65535.")
-                .Validate(o => o.UseTls, "In production, Grpc:ChatService:UseTls must be true.")
+                .Validate<IHostEnvironment>(
+                    (o, env) => env.IsDevelopment() || o.UseTls,
+                    "Grpc:ChatService:UseTls must be true outside Development.")
                 .Validate(o =>
                     !o.EnableMtls ||
                     (!string.IsNullOrWhiteSpace(o.ClientCertificateBase64Env)
                      && !string.IsNullOrWhiteSpace(o.ClientCertificatePasswordEnv)),
                     "When EnableMtls=true, set ClientCertificateBase64Env and ClientCertificatePasswordEnv.")
+                .Validate(o => IsValidScope(o.Scope),
+                    "Grpc:ChatService:Scope must be an absolute URI like 'api://app/.default' or 'api://app/read'.")
                 .ValidateOnStart();
 
             // gRPC per-call timeouts/sizes (note: type is GrpcTimeoutsOptions)
@@ -77,15 +82,23 @@ namespace LLMSessionGateway.Infrastructure
             return services;
         }
 
-        
+        private static bool IsValidScope(string? scope)
+        {
+            var s = scope?.Trim();
+            if (string.IsNullOrWhiteSpace(s))
+                return false;
 
-        
+            if (!Uri.TryCreate(s, UriKind.Absolute, out var uri))
+                return false;
 
-        
+            if (!(uri.Scheme.Equals("api", StringComparison.OrdinalIgnoreCase) ||
+                  uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)))
+                return false;
 
-        
+            if (string.IsNullOrEmpty(uri.AbsolutePath) || uri.AbsolutePath == "/")
+                return false;
 
-        
-
+            return true;
+        }
     }
 }

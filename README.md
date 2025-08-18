@@ -33,7 +33,7 @@ An enterprise-grade, secure, and observable gateway between users and any AI mod
   - TraceId and Correlation-Id across all components.
 
 - **Security & Compliance**
-  - Full support for Keycloak authentication and Kong Gateway for token validation and routing.
+  - Full support for Azure AD authentication and APIM Gateway for token validation and routing.
   - HTTPS transport and GDPR-aligned data retention.
 
 - **Error Handling**
@@ -55,7 +55,7 @@ An enterprise-grade, secure, and observable gateway between users and any AI mod
 
 - **.NET 8** – modern, high-performance runtime for building APIs
 - **gRPC** – efficient communication with the AI model server over HTTP/2
-- **Redis (StackExchange.Redis)** – fast in-memory store for active sessions
+- **Azure Cache for Redis** – fast in-memory store for active sessions
 - **Azure.Storage.Blobs** – durable storage for archived sessions
 - **Serilog** – structured logging for observability
 - **OpenTelemetry** – distributed tracing and metrics collection

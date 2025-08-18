@@ -17,12 +17,12 @@ namespace LLMSessionGateway.API.Auth.Authorization
             _claimNames = jwtOptions.Value.ClaimNames ?? new ClaimNamesConfigs();
         }
 
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext ctx, ScopeRequirement req)
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ScopeRequirement requirement)
         {
-            var scopes = ClaimsMappingHelper.GetScopes(ctx.User, _claimNames);
-            if (scopes.Contains(req.Scope))
+            var scopes = ClaimsMappingHelper.GetScopes(context.User, _claimNames);
+            if (scopes.Contains(requirement.Scope))
             {
-                ctx.Succeed(req);
+                context.Succeed(requirement);
             }
             return Task.CompletedTask;
         }
