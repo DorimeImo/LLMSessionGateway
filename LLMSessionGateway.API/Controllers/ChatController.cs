@@ -150,7 +150,7 @@ namespace LLMSessionGateway.API.Controllers
 
             var tenenantId = User.FindFirstValue("tid");
             if (string.IsNullOrEmpty(tenenantId))
-                throw new InvalidOperationException("Unauthorized request: missing 'iss' claim.");
+                throw new InvalidOperationException("Unauthorized request: missing 'tid' claim.");
 
 
             var json = System.Text.Json.JsonSerializer.Serialize(new { tenenantId, sub });

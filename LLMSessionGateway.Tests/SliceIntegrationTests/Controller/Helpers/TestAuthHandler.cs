@@ -36,7 +36,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller.Helpers
             var claims = new[]
             {
             new Claim("sub", sub),
-            new Claim("iss", "https://test-issuer"),
+            new Claim("tid", "https://test-issuer"),
             new Claim("scp", scopes) // <-- Azure AD-style scopes
         };
 
