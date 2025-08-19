@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure.Identity;
+using Azure.Storage.Blobs;
 using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +24,9 @@ namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.AzureBlobStorage
             {
                 var options = sp.GetRequiredService<IOptions<AzureBlobConfigs>>().Value;
 
-                return new BlobServiceClient(options.ConnectionString);
+                var accountUrl = options.BlobAccountUrl!;          
+                var credential = new DefaultAzureCredential();             
+                return new BlobServiceClient(new Uri(accountUrl), credential);
             });
 
             services.AddScoped<IArchiveSessionStore>(sp =>

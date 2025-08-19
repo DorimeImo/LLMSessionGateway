@@ -34,8 +34,8 @@ namespace LLMSessionGateway.API
                 .AddRedisActiveSessionStore(builder.Configuration)
                 .AddAzureBlobArchiveStore(builder.Configuration)
                 .AddGrpcChatBackend(builder.Configuration)
-                .AddOpenTelemetryTracing(builder.Configuration)
-                .AddSerilogToFileLogging(builder.Configuration)
+                .AddOpenTelemetryToAzureMonitorTracing(builder.Configuration)
+                .AddSerilogToAzureAppInsights(builder.Configuration)
                 .AddPollyRetryPolicy(builder.Configuration)
                 .AddGatewayHealthChecks(builder.Configuration);
 

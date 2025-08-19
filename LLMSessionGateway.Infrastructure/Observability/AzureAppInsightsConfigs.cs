@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace LLMSessionGateway.Infrastructure.Observability
 {
-    public class JaegerConfigs
+    public class AzureAppInsightsConfigs
     {
-        [Required] public string AgentHost { get; set; } = default!;
-        [Required] public int AgentPort { get; set; }
+        [Required] public string ConnectionString { get; set; } = default!;
     }
 }

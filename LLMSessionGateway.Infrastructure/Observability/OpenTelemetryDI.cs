@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Azure.Monitor.OpenTelemetry.Exporter;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Observability.Shared.Contracts;
 using Observability.Shared.DefaultImplementations;
@@ -14,29 +15,26 @@ namespace LLMSessionGateway.Infrastructure.Observability
 {
     public static class OpenTelemetryDI
     {
-        public static IServiceCollection AddOpenTelemetryTracing(this IServiceCollection services, IConfiguration config)
+        public static IServiceCollection AddOpenTelemetryToAzureMonitorTracing(this IServiceCollection services, IConfiguration config)
         {
-            var jaegerConfig = config.GetSection("OpenTelemetry:Jaeger").Get<JaegerConfigs>();
+            var appInsightsConfigs = config.GetSection("OpenTelemetry:ApplicationInsights").Get<AzureAppInsightsConfigs>();
 
             services.AddOpenTelemetry()
-                .WithTracing(builder =>
-                {
-                    builder
-                        .AddAspNetCoreInstrumentation() //incoming requests
-                        .AddHttpClientInstrumentation() //outgoing requests
-                        .AddGrpcClientInstrumentation() //outgoing requests
-                        .AddSource("LLMSessionGateway")
-                        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LLMSessionGateway"));
+                 .ConfigureResource(rb =>
+                     rb.AddService(serviceName: "LLMSessionGateway"))
+                 .WithTracing(builder =>
+                 {
+                     builder
+                         .AddAspNetCoreInstrumentation()   // incoming
+                         .AddHttpClientInstrumentation()   // outgoing HTTP
+                         .AddGrpcClientInstrumentation()   // outgoing gRPC
+                         .AddSource("LLMSessionGateway");  // your custom ActivitySource
 
-
-                    builder.AddConsoleExporter();
-
-                    builder.AddJaegerExporter(o =>
-                    {
-                        o.AgentHost = jaegerConfig!.AgentHost;
-                        o.AgentPort = jaegerConfig.AgentPort;
-                    });
-                });
+                     builder.AddAzureMonitorTraceExporter(o =>
+                     {
+                         o.ConnectionString = Environment.GetEnvironmentVariable(appInsightsConfigs!.ConnectionString);
+                     });
+                 });
 
             services.AddScoped<ITracingService>(sp =>
             {

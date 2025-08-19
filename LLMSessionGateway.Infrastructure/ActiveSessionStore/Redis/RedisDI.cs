@@ -1,5 +1,6 @@
 ﻿using LLMSessionGateway.Application.Contracts.Ports;
 using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -15,8 +16,15 @@ namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis
             services.Configure<RedisConfigs>(config.GetSection("Redis"));
 
             services.AddSingleton<IConnectionMultiplexer>(sp =>
-                ConnectionMultiplexer.Connect(
-                    sp.GetRequiredService<IOptions<RedisConfigs>>().Value.ConnectionString));
+            {
+                var options = sp.GetRequiredService<IOptions<RedisConfigs>>().Value;
+
+                var cfg = sp.GetRequiredService<IConfiguration>();
+                var conn = Environment.GetEnvironmentVariable(options.ConnectionString)
+                    ?? throw new InvalidOperationException("Redis connection string not provided.");
+
+                return ConnectionMultiplexer.Connect(conn);
+            });
 
             services.AddScoped<IDistributedLockManager>(sp =>
             {

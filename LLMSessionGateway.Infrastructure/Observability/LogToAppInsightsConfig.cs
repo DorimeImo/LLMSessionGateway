@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace LLMSessionGateway.Infrastructure.Observability
 {
-    public class FileLoggingConfig
+    public class LogToAppInsightsConfig
     {
-        [Required] public string BasePath { get; set; } = "Logs";
+        [Required] public string AppInsightsConnectionString { get; set; } = "Logs";
         [Required] public string FileNamePattern { get; set; } = "log-.txt";
         [Required] public string RollingInterval { get; set; } = "Day";
     }

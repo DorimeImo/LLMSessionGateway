@@ -26,8 +26,8 @@ namespace LLMSessionGateway.Infrastructure
             services.AddOptions<AzureBlobConfigs>()
                 .Bind(config.GetSection("AzureBlob"))
                 .ValidateDataAnnotations()
-                .Validate(o => !string.IsNullOrWhiteSpace(o.ConnectionString),
-                    "AzureBlob:ConnectionString is required.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.BlobAccountUrl),
+                    "AzureBlob:AccountUrl is required.")
                 .Validate(o => !string.IsNullOrWhiteSpace(o.ContainerName),
                     "AzureBlob:ContainerName is required.")
                 .ValidateOnStart();
@@ -64,7 +64,7 @@ namespace LLMSessionGateway.Infrastructure
                 .ValidateOnStart();
 
             // Logging
-            services.AddOptions<FileLoggingConfig>()
+            services.AddOptions<LogToAppInsightsConfig>()
                 .Bind(config.GetSection("Logging:File"))
                 .ValidateDataAnnotations()
                 .Validate(o => Enum.TryParse<RollingInterval>(o.RollingInterval, out _),
@@ -72,11 +72,11 @@ namespace LLMSessionGateway.Infrastructure
                 .ValidateOnStart();
 
             // OpenTelemetry
-            services.AddOptions<JaegerConfigs>()
-                .Bind(config.GetSection("OpenTelemetry:Jaeger"))
+            services.AddOptions<AzureAppInsightsConfigs>()
+                .Bind(config.GetSection("OpenTelemetry:ApplicationInsights"))
                 .ValidateDataAnnotations()
-                .Validate(o => o.AgentPort is > 0 and <= 65535,
-                    "OpenTelemetry:Jaeger:AgentPort must be 1..65535.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ConnectionString),
+                    "OpenTelemetry:ApplicationInsights:ConnectionString is required.")
                 .ValidateOnStart();
 
             return services;

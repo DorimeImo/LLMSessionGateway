@@ -63,7 +63,6 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
                     ["Grpc:ChatService:Port"] = "5005",
                     ["Grpc:ChatService:UseTls"] = "false",
                     ["Grpc:ChatService:EnableMtls"] = "false",
-                    // NEW: validated in config
                     ["Grpc:ChatService:Scope"] = "api://test-backend/.default",
 
                     // gRPC timeouts/sizes
@@ -74,9 +73,8 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
                     ["Grpc:Timeouts:MaxSendBytes"] = "4194304",
                     ["Grpc:Timeouts:MaxReceiveBytes"] = "33554432",
 
-                    // Jaeger (only if you read it in Dev)
-                    ["OpenTelemetry:Jaeger:AgentHost"] = "localhost",
-                    ["OpenTelemetry:Jaeger:AgentPort"] = "6831"
+                    // AppInsights
+                    ["OpenTelemetry:ApplicationInsights:ConnectionString"] = "localhost"
                 };
 
                 cfg.AddInMemoryCollection(auth.Concat(infra));
