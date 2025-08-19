@@ -148,12 +148,12 @@ namespace LLMSessionGateway.API.Controllers
             if (string.IsNullOrEmpty(sub))
                 throw new InvalidOperationException("Unauthorized request: missing 'sub' claim.");
 
-            var iss = User.FindFirstValue("iss");
-            if (string.IsNullOrEmpty(iss))
+            var tenenantId = User.FindFirstValue("tid");
+            if (string.IsNullOrEmpty(tenenantId))
                 throw new InvalidOperationException("Unauthorized request: missing 'iss' claim.");
 
 
-            var json = System.Text.Json.JsonSerializer.Serialize(new { iss, sub });
+            var json = System.Text.Json.JsonSerializer.Serialize(new { tenenantId, sub });
             return Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(
                 System.Text.Encoding.UTF8.GetBytes(json));
         }

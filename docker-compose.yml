@@ -9,27 +9,4 @@ services:
       dockerfile: LLMSessionGateway.API/Dockerfile
     ports:
       - "5000:8080"
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Redis: "redis:6379"
-      ConnectionStrings__AzureBlob: "UseDevelopmentStorage=true"
-    depends_on:
-      - redis
-      - azurite
 
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
-    ports:
-      - "10000:10000" # Blob service
-    command: "azurite-blob --blobHost 0.0.0.0 --blobPort 10000"
-
-  jaeger:
-    image: jaegertracing/all-in-one:1.49
-    ports:
-      - "16686:16686" # UI
-      - "6831:6831/udp" # UDP endpoint
