@@ -6,7 +6,7 @@ using Observability.Shared.Helpers;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis
 {
     //TODO: перегрузку Redis
     public class RedisActiveStore : IActiveSessionStore

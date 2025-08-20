@@ -1,5 +1,5 @@
 ﻿using LLMSessionGateway.API;
-using LLMSessionGateway.API.Auth.Authorization;
+using LLMSessionGateway.API.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -18,7 +18,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.AzureAuth
 {
     public class TestAppFactory : WebApplicationFactory<Program>
     {
@@ -35,49 +35,8 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
 
             builder.ConfigureAppConfiguration((ctx, cfg) =>
             {
-                var auth = new Dictionary<string, string?>
-                {
-                    // Use our local test issuer/audience
-                    ["Auth:Jwt:Authority"] = TestTokens.Issuer,
-                    ["Auth:Jwt:Audience"] = TestTokens.Audience,
-                    ["Auth:Jwt:ClockSkewSeconds"] = "0",
-                    ["Auth:Jwt:RequireSub"] = "true",
-                    // Azure AD aligned: scopes live in "scp"
-                    ["Auth:Jwt:ClaimNames:Scope"] = TestTokens.ScopeClaim,
-                    ["Auth:Jwt:ClaimNames:Sub"] = "sub"
-                };
+                cfg.AddInMemoryCollection(InMemoryConfigurations.CreateInMemoryConfigurations());
 
-                var infra = new Dictionary<string, string?>
-                {
-                    // Redis (kept simple for tests)
-                    ["Redis:ConnectionString"] = "localhost:6379",
-                    ["Redis:LockTtlSeconds"] = "30",
-                    ["Redis:ActiveSessionTtlSeconds"] = "3600",
-
-                    // Azure Blob (Dev path uses ConnectionString / Azurite)
-                    ["AzureBlob:ConnectionString"] = "UseDevelopmentStorage=true",
-                    ["AzureBlob:ContainerName"] = "test",
-
-                    // gRPC backend options
-                    ["Grpc:ChatService:Host"] = "localhost",
-                    ["Grpc:ChatService:Port"] = "5005",
-                    ["Grpc:ChatService:UseTls"] = "false",
-                    ["Grpc:ChatService:EnableMtls"] = "false",
-                    ["Grpc:ChatService:Scope"] = "api://test-backend/.default",
-
-                    // gRPC timeouts/sizes
-                    ["Grpc:Timeouts:OpenSeconds"] = "5",
-                    ["Grpc:Timeouts:SendSeconds"] = "10",
-                    ["Grpc:Timeouts:StreamSetupSeconds"] = "10",
-                    ["Grpc:Timeouts:CloseSeconds"] = "5",
-                    ["Grpc:Timeouts:MaxSendBytes"] = "4194304",
-                    ["Grpc:Timeouts:MaxReceiveBytes"] = "33554432",
-
-                    // AppInsights
-                    ["OpenTelemetry:ApplicationInsights:ConnectionString"] = "localhost"
-                };
-
-                cfg.AddInMemoryCollection(auth.Concat(infra));
             });
 
             builder.ConfigureTestServices(services =>

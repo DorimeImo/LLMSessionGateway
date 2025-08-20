@@ -1,16 +1,16 @@
-using LLMSessionGateway.API.Auth.Authentication.Configs;
+using LLMSessionGateway.API.Auth.AzureAD.Authentication.Configs;
 using System.Security.Claims;
 using System.Text.Json;
 
-namespace LLMSessionGateway.API.Auth.Authorization.Helpers
+namespace LLMSessionGateway.API.Auth.AzureAD.Authorization.Helpers
 {
     public static class ClaimsMappingHelper
     {
-        public static ISet<string> GetScopes(ClaimsPrincipal user, ClaimNamesConfigs claimNames)
+        public static ISet<string> GetScopes(ClaimsPrincipal user, ClaimNames claimNames)
         {
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var scopeClaimName = string.IsNullOrWhiteSpace(claimNames.Scope) ? "scp" : claimNames.Scope;
+            var scopeClaimName = claimNames.Scope;
             var scopeValue = user.FindFirst(scopeClaimName)?.Value;
 
             if (!string.IsNullOrWhiteSpace(scopeValue))

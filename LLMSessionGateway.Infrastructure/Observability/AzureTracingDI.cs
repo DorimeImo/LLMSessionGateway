@@ -13,12 +13,10 @@ using System.Threading.Tasks;
 
 namespace LLMSessionGateway.Infrastructure.Observability
 {
-    public static class OpenTelemetryDI
+    public static class AzureTracingDI
     {
-        public static IServiceCollection AddOpenTelemetryToAzureMonitorTracing(this IServiceCollection services, IConfiguration config)
+        public static IServiceCollection AddAzureMonitorTracing(this IServiceCollection services, IConfiguration config)
         {
-            var appInsightsConfigs = config.GetSection("OpenTelemetry:ApplicationInsights").Get<AzureAppInsightsConfigs>();
-
             services.AddOpenTelemetry()
                  .ConfigureResource(rb =>
                      rb.AddService(serviceName: "LLMSessionGateway"))
@@ -32,7 +30,8 @@ namespace LLMSessionGateway.Infrastructure.Observability
 
                      builder.AddAzureMonitorTraceExporter(o =>
                      {
-                         o.ConnectionString = Environment.GetEnvironmentVariable(appInsightsConfigs!.ConnectionString);
+                         o.ConnectionString = Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")
+                         ?? throw new InvalidOperationException("Missing Azure Application Insights connection string. Set APPLICATIONINSIGHTS_CONNECTION_STRING."); ;
                      });
                  });
 

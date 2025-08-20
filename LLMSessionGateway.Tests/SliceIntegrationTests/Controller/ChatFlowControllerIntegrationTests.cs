@@ -30,12 +30,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
         public async Task FullChatFlow_WorksWithMocks()
         {
             Environment.SetEnvironmentVariable(
-                "APP_INSIGTS_CONNECTION_STRING",
-                "InstrumentationKey=00000000-0000-0000-0000-000000000000;" +
-                "IngestionEndpoint=https://westeurope-1.in.applicationinsights.azure.com/");
-
-            Environment.SetEnvironmentVariable(
-                "APP_INSIGTS_LOGS_CONNECTION_STRING",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING",
                 "InstrumentationKey=00000000-0000-0000-0000-000000000000;" +
                 "IngestionEndpoint=https://westeurope-1.in.applicationinsights.azure.com/");
 
@@ -49,7 +44,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
             {
                 builder.ConfigureAppConfiguration((ctx, cfg) =>
                 {
-                    cfg.AddInMemoryCollection(CreateInMemoryConfigurations());
+                    cfg.AddInMemoryCollection(InMemoryConfigurations.CreateInMemoryConfigurations());
                 });
 
                 builder.ConfigureTestServices(services =>
@@ -65,10 +60,10 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
 
                     services.AddAuthentication(options =>
                     {
-                        options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
-                        options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                        options.DefaultAuthenticateScheme = TestAzureAuthHandler.SchemeName;
+                        options.DefaultChallengeScheme = TestAzureAuthHandler.SchemeName;
                     })
-                    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+                    .AddScheme<AuthenticationSchemeOptions, TestAzureAuthHandler>(TestAzureAuthHandler.SchemeName, _ => { });
 
                     services.AddAuthorization();
 
@@ -120,39 +115,6 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Controller
                 .ReturnsAsync(Result<Unit>.Success(Unit.Value));
 
             return mock;
-        }
-
-        private static Dictionary<string, string?> CreateInMemoryConfigurations()
-        {
-            return new Dictionary<string, string?>
-            {
-                ["Redis:ConnectionString"] = "localhost:6379",
-                ["Redis:LockTtlSeconds"] = "30",
-                ["Redis:ActiveSessionTtlSeconds"] = "3600",
-
-                ["AzureBlob:ContainerName"] = "test",
-                ["AzureBlob:BlobAccountUrl"] = "https://unit-tests.blob.core.windows.net",
-
-                ["Grpc:ChatService:Host"] = "localhost",
-                ["Grpc:ChatService:Port"] = "5005",
-                ["Grpc:ChatService:UseTls"] = "true",
-                ["Grpc:ChatService:EnableMtls"] = "false",
-
-                ["Grpc:Timeouts:OpenSession"] = "00:00:05",
-                ["Grpc:Timeouts:SendMessage"] = "00:00:10",
-                ["Grpc:Timeouts:StreamReplySetup"] = "00:00:10",
-                ["Grpc:Timeouts:CloseSession"] = "00:00:05",
-
-                ["Logging:ApplicationInsights:AppInsightsConnectionString"] =
-                    "InstrumentationKey=00000000-0000-0000-0000-000000000000;" +
-                    "IngestionEndpoint=https://westeurope-1.in.applicationinsights.azure.com/",
-                ["Logging:ApplicationInsights:FileNamePattern"] = "log-.txt",
-                ["Logging:ApplicationInsights:RollingInterval"] = "Day",
-
-                ["OpenTelemetry:ApplicationInsights:ConnectionString"] =
-                  "InstrumentationKey=00000000-0000-0000-0000-000000000000;" +
-                  "IngestionEndpoint=https://westeurope-1.in.applicationinsights.azure.com/",
-            };
         }
     }
 }

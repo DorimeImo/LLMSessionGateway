@@ -1,5 +1,5 @@
 ﻿using LLMSessionGateway.Application.Contracts.Ports;
-using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis;
 using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,21 +7,21 @@ using Microsoft.Extensions.Options;
 using Observability.Shared.Contracts;
 using StackExchange.Redis;
 
-namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis.DI.Azure
 {
     public static class RedisDI
     {
-        public static IServiceCollection AddRedisActiveSessionStore(this IServiceCollection services, IConfiguration config)
+        public static IServiceCollection AddAzureRedisActiveSessionStore(this IServiceCollection services, IConfiguration config)
         {
-            services.Configure<RedisConfigs>(config.GetSection("Redis"));
+            ValidateAndAddConfigs(services, config);
 
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
                 var options = sp.GetRequiredService<IOptions<RedisConfigs>>().Value;
 
                 var cfg = sp.GetRequiredService<IConfiguration>();
-                var conn = Environment.GetEnvironmentVariable(options.ConnectionString)
-                    ?? throw new InvalidOperationException("Redis connection string not provided.");
+                var conn = Environment.GetEnvironmentVariable("AZURE_REDIS_CONNECTION_STRING")
+                    ?? throw new InvalidOperationException("Azure Redis connection string not provided. Set AZURE_REDIS_CONNECTION_STRING.");
 
                 return ConnectionMultiplexer.Connect(conn);
             });
@@ -57,6 +57,16 @@ namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis
             });
 
             return services;
+        }
+
+        private static void ValidateAndAddConfigs(IServiceCollection services, IConfiguration config)
+        {
+            services.AddOptions<RedisConfigs>()
+                .Bind(config.GetSection("Redis"))
+                .ValidateDataAnnotations()
+                .Validate(o => o.LockTtlSeconds > 0, "Redis:LockTtlSeconds must be > 0.")
+                .Validate(o => o.ActiveSessionTtlSeconds > 0, "Redis:ActiveSessionTtlSeconds must be > 0.")
+                .ValidateOnStart();
         }
     }
 }

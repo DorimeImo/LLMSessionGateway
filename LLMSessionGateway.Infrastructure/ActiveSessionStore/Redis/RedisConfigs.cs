@@ -5,11 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis
 {
     public class RedisConfigs
     {
-        [Required] public string ConnectionString { get; set; } = default!;
         [Required] public int LockTtlSeconds { get; set; }
         [Required] public int ActiveSessionTtlSeconds { get; set; }
     }

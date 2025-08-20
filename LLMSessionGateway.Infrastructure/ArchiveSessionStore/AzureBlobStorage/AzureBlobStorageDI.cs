@@ -18,7 +18,7 @@ namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.AzureBlobStorage
     {
         public static IServiceCollection AddAzureBlobArchiveStore(this IServiceCollection services, IConfiguration config)
         {
-            services.Configure<AzureBlobConfigs>(config.GetSection("AzureBlob"));
+            ValidateAndAddConfigs(services, config);
 
             services.AddSingleton(sp =>
             {
@@ -42,6 +42,18 @@ namespace LLMSessionGateway.Infrastructure.ArchiveSessionStore.AzureBlobStorage
             });
 
             return services;
+        }
+
+        private static void ValidateAndAddConfigs(IServiceCollection services, IConfiguration config)
+        {
+            services.AddOptions<AzureBlobConfigs>()
+                .Bind(config.GetSection("AzureBlob"))
+                .ValidateDataAnnotations()
+                .Validate(o => !string.IsNullOrWhiteSpace(o.BlobAccountUrl),
+                    "AzureBlob:AccountUrl is required.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ContainerName),
+                    "AzureBlob:ContainerName is required.")
+                .ValidateOnStart();
         }
     }
 }

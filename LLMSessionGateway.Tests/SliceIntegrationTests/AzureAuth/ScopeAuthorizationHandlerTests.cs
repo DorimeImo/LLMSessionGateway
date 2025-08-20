@@ -1,19 +1,15 @@
 ﻿using FluentAssertions;
-using LLMSessionGateway.API.Auth.Authentication.Configs;
+using LLMSessionGateway.API.Auth.Authentication.AzureAD.Configs;
 using LLMSessionGateway.API.Auth.Authorization;
-using LLMSessionGateway.API.Auth.Authorization.Requirements;
+using LLMSessionGateway.API.Auth.AzureAD.Authentication.Configs;
+using LLMSessionGateway.API.Auth.AzureAD.Authorization.Requirements;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
-namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.AzureAuth
 {
     public class ScopeAuthorizationHandlerTests
     {
@@ -21,7 +17,7 @@ namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
         {
             var jwtCfg = new JwtValidationConfigs
             {
-                ClaimNames = new ClaimNamesConfigs { Scope = "scp", Sub = "sub" }
+                ClaimNames = new ClaimNames { Scope = "scp", Sub = "sub" }
             };
             var opts = Mock.Of<IOptions<JwtValidationConfigs>>(o => o.Value == jwtCfg);
             return new ScopeAuthorizationHandler(opts);

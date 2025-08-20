@@ -2,13 +2,15 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using LLMSessionGateway.API.Auth;
+using LLMSessionGateway.API.Auth.AzureAD;
 using LLMSessionGateway.API.Controllers;
 using LLMSessionGateway.API.Hosting;
 using LLMSessionGateway.API.Validation;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Infrastructure;
-using LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis.DI.Azure;
 using LLMSessionGateway.Infrastructure.ArchiveSessionStore.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.Auth.AzureAD;
 using LLMSessionGateway.Infrastructure.Grpc;
 using LLMSessionGateway.Infrastructure.HealthChecks;
 using LLMSessionGateway.Infrastructure.Observability;
@@ -25,17 +27,19 @@ namespace LLMSessionGateway.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Auth
-            builder.Services.AddApiAuthenticationAndAuthorization(builder.Configuration);
+            // Azure Auth
+            builder.Services.AddApiAzureADAuth(builder.Configuration);
 
             //Infrastructure registration
             builder.Services
-                .AddConfigurationValidation(builder.Configuration)
-                .AddRedisActiveSessionStore(builder.Configuration)
+                //Azure
+                .AddAzureRedisActiveSessionStore(builder.Configuration)
                 .AddAzureBlobArchiveStore(builder.Configuration)
+                .AddAzureMonitorTracing(builder.Configuration)
+                .AddAzureLogging(builder.Configuration)
+                .AddAzureTokenProvider()
+                //General
                 .AddGrpcChatBackend(builder.Configuration)
-                .AddOpenTelemetryToAzureMonitorTracing(builder.Configuration)
-                .AddSerilogToAzureAppInsights(builder.Configuration)
                 .AddPollyRetryPolicy(builder.Configuration)
                 .AddGatewayHealthChecks(builder.Configuration);
 
@@ -86,7 +90,8 @@ namespace LLMSessionGateway.API
             app.UseRouting();
 
             //Auth
-            app.UseApiAuth();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             //Middleware
             app.UseGlobalExceptionHandling();

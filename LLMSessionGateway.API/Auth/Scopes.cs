@@ -1,4 +1,4 @@
-namespace LLMSessionGateway.API.Auth.Authorization
+namespace LLMSessionGateway.API.Auth
 {
     public static class Scopes
     {

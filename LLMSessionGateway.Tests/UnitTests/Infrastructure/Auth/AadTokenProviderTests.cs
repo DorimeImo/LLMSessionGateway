@@ -13,14 +13,8 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Auth
     {
         private const string Scope = "api://chat-backend/.default";
 
-        private readonly Mock<IStructuredLogger> _logger = new();
-        private readonly Mock<ITracingService> _tracing = new();
+        private readonly Mock<Serilog.ILogger> _logger = new();
 
-        public AadTokenProviderTests()
-        {
-            _tracing.Setup(t => t.StartActivity(It.IsAny<string>()))
-                    .Returns(Mock.Of<IDisposable>());
-        }
 
         [Fact]
         public async Task GetTokenAsync_FirstCall_FetchesAndCaches()
@@ -29,7 +23,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Auth
             var cred = new StubTokenCredential((_, _) =>
                 new ValueTask<AccessToken>(new AccessToken("tok-1", DateTimeOffset.UtcNow.AddMinutes(60))));
 
-            var sut = new AadTokenProvider(_logger.Object, _tracing.Object, cred);
+            var sut = new TokenProvider(_logger.Object, cred);
 
             // Act
             var res = await sut.GetTokenAsync(Scope);
@@ -47,7 +41,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Auth
             var cred = new StubTokenCredential((_, _) =>
                 new ValueTask<AccessToken>(new AccessToken("tok-1", DateTimeOffset.UtcNow.AddMinutes(60))));
 
-            var sut = new AadTokenProvider(_logger.Object, _tracing.Object, cred);
+            var sut = new TokenProvider(_logger.Object, cred);
 
             // Act
             var first = await sut.GetTokenAsync(Scope);
@@ -76,7 +70,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Auth
                 return new ValueTask<AccessToken>(token);
             });
 
-            var sut = new AadTokenProvider(_logger.Object, _tracing.Object, cred);
+            var sut = new TokenProvider(_logger.Object, cred);
 
             // Act
             var first = await sut.GetTokenAsync(Scope);
@@ -102,7 +96,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Auth
                 return new ValueTask<AccessToken>(tcs.Task);
             });
 
-            var sut = new AadTokenProvider(_logger.Object, _tracing.Object, cred);
+            var sut = new TokenProvider(_logger.Object, cred);
 
             // Act: fire multiple concurrent requests for the same scope
             var tasks = new List<Task<Result<string>>>();
@@ -129,7 +123,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Auth
             var cred = new StubTokenCredential((_, _) =>
                 new ValueTask<AccessToken>(new AccessToken("tok", DateTimeOffset.UtcNow.AddMinutes(60))));
 
-            var sut = new AadTokenProvider(_logger.Object, _tracing.Object, cred);
+            var sut = new TokenProvider(_logger.Object, cred);
 
             // Act
             var res = await sut.GetTokenAsync(Scope, cts.Token);
@@ -147,7 +141,7 @@ namespace LLMSessionGateway.Tests.UnitTests.Infrastructure.Auth
             var cred = new StubTokenCredential((_, _) =>
                 throw new AuthenticationFailedException("boom"));
 
-            var sut = new AadTokenProvider(_logger.Object, _tracing.Object, cred);
+            var sut = new TokenProvider(_logger.Object, cred);
 
             // Act
             var res = await sut.GetTokenAsync(Scope);

@@ -1,9 +1,11 @@
 ﻿using Grpc.Core;
 using Grpc.Net.Client.Configuration;
 using LLMSessionGateway.Application.Contracts.Ports;
+using LLMSessionGateway.Infrastructure.ArchiveSessionStore.Redis;
 using LLMSessionGateway.Infrastructure.Auth;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -21,8 +23,7 @@ namespace LLMSessionGateway.Infrastructure.Grpc
     {
         public static IServiceCollection AddGrpcChatBackend(this IServiceCollection services, IConfiguration config)
         {
-            services.Configure<GrpcConfigs>(config.GetSection("Grpc:ChatService"));
-            services.Configure<GrpcTimeoutsConfigs>(config.GetSection("Grpc:Timeouts"));
+            ValidateAndAddConfigs(services, config);
 
             services.AddGrpcClient<ChatService.ChatServiceClient>((sp, o) =>
             {
@@ -88,6 +89,66 @@ namespace LLMSessionGateway.Infrastructure.Grpc
 
             services.AddScoped<IChatBackend, GrpcChatBackend>();
             return services;
+        }
+
+        private static void ValidateAndAddConfigs(IServiceCollection services, IConfiguration config)
+        {
+            services.AddOptions<GrpcConfigs>()
+                .Bind(config.GetSection("Grpc:ChatService"))
+                .ValidateDataAnnotations()
+                .Validate(o => !string.IsNullOrWhiteSpace(o.Host), "Grpc:ChatService:Host is required.")
+                .Validate(o => o.Port is > 0 and <= 65535, "Grpc:ChatService:Port must be 1..65535.")
+                .Validate<IHostEnvironment>(
+                    (o, env) => env.IsDevelopment() || o.UseTls,
+                    "Grpc:ChatService:UseTls must be true outside Development.")
+                .Validate(o =>
+                    !o.EnableMtls ||
+                    (!string.IsNullOrWhiteSpace(o.ClientCertificateBase64Env)
+                     && !string.IsNullOrWhiteSpace(o.ClientCertificatePasswordEnv)),
+                    "When EnableMtls=true, set ClientCertificateBase64Env and ClientCertificatePasswordEnv.")
+                .Validate(o => IsValidScope(o.Scope),
+                    "Grpc:ChatService:Scope must be an absolute URI like 'api://app/.default' or 'api://app/read'.")
+                .ValidateOnStart();
+
+            services.AddOptions<GrpcTimeoutsConfigs>()
+                .Bind(config.GetSection("Grpc:Timeouts"))
+                .Validate(o => o.OpenSeconds > 0, "Grpc:Timeouts:OpenSeconds must be > 0.")
+                .Validate(o => o.SendSeconds > 0, "Grpc:Timeouts:SendSeconds must be > 0.")
+                .Validate(o => o.StreamSetupSeconds > 0, "Grpc:Timeouts:StreamSetupSeconds must be > 0.")
+                .Validate(o => o.CloseSeconds > 0, "Grpc:Timeouts:CloseSeconds must be > 0.")
+                .Validate(o => o.MaxSendBytes > 0 && o.MaxReceiveBytes > 0,
+                          "Grpc:Timeouts:MaxSendBytes and MaxReceiveBytes must be > 0.")
+                .Validate(o => o.MaxReceiveBytes >= o.MaxSendBytes,
+                          "Grpc:Timeouts:MaxReceiveBytes must be >= MaxSendBytes.")
+                .ValidateOnStart();
+        }
+
+        private static bool IsValidScope(string? scope)
+        {
+            var s = scope?.Trim();
+            if (string.IsNullOrWhiteSpace(s)) return false;
+
+            var tokens = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var t in tokens)
+            {
+                if (Uri.TryCreate(t, UriKind.Absolute, out var uri))
+                {
+                    var schemeOk = uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)
+                                   || uri.Scheme.Equals("api", StringComparison.OrdinalIgnoreCase);
+                    if (schemeOk && !string.IsNullOrEmpty(uri.AbsolutePath) && uri.AbsolutePath != "/")
+                        continue;
+
+                    return false;
+                }
+
+                if (System.Text.RegularExpressions.Regex.IsMatch(t, @"^[\x21\x23-\x5B\x5D-\x7E]+$"))
+                    continue;
+
+                return false;
+            }
+
+            return true;
         }
 
         private static X509Certificate2 LoadClientCertificateFromEnv(GrpcConfigs cfg)

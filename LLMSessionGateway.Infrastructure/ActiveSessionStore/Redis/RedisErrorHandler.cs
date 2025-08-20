@@ -3,7 +3,7 @@ using Observability.Shared.Contracts;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage
+namespace LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis
 {
     public static class RedisErrorHandler
     {

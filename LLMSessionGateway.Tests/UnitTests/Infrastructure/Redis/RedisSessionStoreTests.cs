@@ -1,6 +1,6 @@
 ﻿using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
-using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis;
 using LLMSessionGateway.Tests.UnitTests.Infrastructure.Helpers;
 using Moq;
 using Observability.Shared.Contracts;

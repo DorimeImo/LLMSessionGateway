@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LLMSessionGateway.Tests.SliceIntegrationTests.Auth
+namespace LLMSessionGateway.Tests.SliceIntegrationTests.AzureAuth
 {
     public static class TestTokens
     {

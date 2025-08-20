@@ -2,7 +2,7 @@
 using LLMSessionGateway.Application.Contracts.Resilience;
 using LLMSessionGateway.Core;
 using LLMSessionGateway.Core.Utilities.Functional;
-using LLMSessionGateway.Infrastructure.ActiveSessionStore.AzureBlobStorage;
+using LLMSessionGateway.Infrastructure.ActiveSessionStore.Redis;
 using Moq;
 using Observability.Shared.Contracts;
 using System;
