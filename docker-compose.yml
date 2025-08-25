@@ -1,12 +1,12 @@
 version: '3.9'
 
 services:
-
   api:
-    image: llmsessiongateway-api
     build:
       context: .
       dockerfile: LLMSessionGateway.API/Dockerfile
+    image: llmsessiongateway-api:latest
     ports:
-      - "5000:8080"
+      - "5000:8080"  
+    restart: unless-stopped
 

@@ -1,0 +1,33 @@
+# ---- Build stage ----
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy project files for layer caching
+COPY LLMSessionGateway.sln ./
+COPY LLMSessionGateway.*/*.csproj ./
+RUN dotnet restore ./LLMSessionGateway.API/LLMSessionGateway.API.csproj
+
+# Copy everything and publish
+COPY . .
+RUN dotnet publish ./LLMSessionGateway.API/LLMSessionGateway.API.csproj \
+    -c Release -o /app/publish /p:UseAppHost=false
+
+# ---- Runtime stage ----
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+
+# Copy published output
+COPY --from=build /app/publish .
+
+# Expose application port
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+EXPOSE 8080
+
+# Create non-root user and set ownership
+RUN adduser --disabled-password --gecos "" appuser \
+    && chown -R appuser /app
+USER appuser
+
+# Entrypoint
+ENTRYPOINT ["dotnet", "LLMSessionGateway.API.dll"]
+

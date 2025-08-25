@@ -90,7 +90,7 @@ namespace LLMSessionGateway.API
 
             var app = builder.Build();
 
-            //API pipeline
+            //API pipeline (stay secure outside of Kubernetes)
             if (!app.Environment.IsDevelopment())
             {
                 app.UseHsts();

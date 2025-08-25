@@ -30,3 +30,45 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t llmsessiongateway-api -f LLMSessionGateway.API/Dockerfile .
+
+      - name: Run container (detached)
+        run: |
+          docker run -d --name llmsessiongateway-ci \
+            -p 5000:8080 \
+            -e ASPNETCORE_ENVIRONMENT=Production \
+            llmsessiongateway-api
+          docker ps
+
+      - name: Smoke test /health
+        continue-on-error: true
+        run: |
+          set -e
+          for i in {1..30}; do
+            if curl -fsS http://localhost:5000/health > /dev/null; then
+              echo "Health endpoint is up ✅"
+              exit 0
+            fi
+            echo "Waiting for container to become healthy... ($i/30)"
+            sleep 2
+          done
+          echo "⚠️ Health check failed after retries"
+          exit 1
+
+      - name: Check /ready endpoint
+        continue-on-error: true
+        run: |
+          if curl -fsS http://localhost:5000/ready; then
+            echo "Ready endpoint returned 200 ✅"
+          else
+            echo "⚠️ Ready endpoint failed"
+          fi
+
+      - name: Dump container logs
+        if: always()
+        run: docker logs llmsessiongateway-ci || true
+
+      - name: Cleanup container
+        if: always()
+        run: |
+          docker stop llmsessiongateway-ci || true
+          docker rm llmsessiongateway-ci || true
