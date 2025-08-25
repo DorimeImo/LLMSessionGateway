@@ -1,20 +1,21 @@
 ﻿using LLMSessionGateway.API.Auth;
+using LLMSessionGateway.API.Auth.Helpers;
 using LLMSessionGateway.API.DTOs;
 using LLMSessionGateway.API.ErrorHandling;
 using LLMSessionGateway.Application.Services;
 using LLMSessionGateway.Core.Utilities.Functional;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.RateLimiting;
 using Observability.Shared.Contracts;
 using Observability.Shared.Helpers;
-using System.Security.Claims;
 
 namespace LLMSessionGateway.API.Controllers
 {
     [Authorize]
     [ApiController]
     [Route("api/v{version:apiVersion}/chat")]
+    [EnableRateLimiting(RateLimitingDI.PolicyCombined)]
     public class ChatController : ControllerBase
     {
         private readonly IChatSessionOrchestrator _sessionManager;
@@ -38,8 +39,7 @@ namespace LLMSessionGateway.API.Controllers
 
             using (_tracingService.StartActivity(tracingOperationName))
             {
-                var userId = GetUserIdOrThrow();
-
+                var userId = SubIssUserPartitionKeyHelper.GetUserIdOrThrow(User);
 
                 var result = await _sessionManager.StartSessionAsync(userId, cancellationToken);
 
@@ -140,22 +140,6 @@ namespace LLMSessionGateway.API.Controllers
             };
 
             return StatusCode(details.StatusCode, error);
-        }
-
-        private string GetUserIdOrThrow()
-        {
-            var sub = User.FindFirstValue("sub");
-            if (string.IsNullOrEmpty(sub))
-                throw new InvalidOperationException("Unauthorized request: missing 'sub' claim.");
-
-            var issuer = User.FindFirstValue("iss");
-            if (string.IsNullOrEmpty(issuer))
-                throw new InvalidOperationException("Unauthorized request: missing 'iss' claim.");
-
-
-            var json = System.Text.Json.JsonSerializer.Serialize(new { issuer, sub });
-            return Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(
-                System.Text.Encoding.UTF8.GetBytes(json));
         }
     }
 }

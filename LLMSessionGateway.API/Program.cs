@@ -27,8 +27,11 @@ namespace LLMSessionGateway.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Azure Auth
+            // Azure: API Auth registration
             builder.Services.AddApiAzureADAuth(builder.Configuration);
+
+            // Defense-in-depth rate limiting
+            builder.Services.AddGatewayDefenseInDepthRateLimiting();
 
             //Infrastructure registration
             builder.Services
@@ -87,11 +90,19 @@ namespace LLMSessionGateway.API
 
             var app = builder.Build();
 
+            //API pipeline
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHsts();
+                app.UseHttpsRedirection();
+            }
+
             app.UseRouting();
 
             //Auth
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseRateLimiter(); 
 
             //Middleware
             app.UseGlobalExceptionHandling();
