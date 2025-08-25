@@ -1,0 +1,8 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: llmsessiongateway
+  namespace: llmsessiongateway
+spec:
+  minAvailable: 2
+  selector: { matchLabels: { app: llmsessiongateway } }

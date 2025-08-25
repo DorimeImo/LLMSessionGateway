@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llmsgw-config
+  namespace: llmsessiongateway
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://0.0.0.0:8080"
+  SERILOG__FILENAMEPATTERN: "/var/log/app/{Month}/{Day}-{Hour}-{Minute}-log.txt"

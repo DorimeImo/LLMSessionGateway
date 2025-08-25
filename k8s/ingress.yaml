@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: llmsessiongateway
+  namespace: llmsessiongateway
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend: { service: { name: llmsessiongateway, port: { number: 80 } } }
+  # tls:
+  # - hosts: [api.example.com]
+  #   secretName: llmsgw-tls
